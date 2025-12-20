@@ -531,8 +531,8 @@
             statusDots[0].classList.replace('bg-slate-500', 'bg-brand-green');
             statusDots[0].classList.add('animate-pulse-fast');
 
-            // --- REAL FETCH IMPLEMENTATION with CORS Proxy ---
-            // Changed from cors-anywhere to allorigins to avoid 403 Forbidden
+            // --- REAL FETCH IMPLEMENTATION with CORS Proxy (allorigins.win) ---
+            // Using allorigins.win to bypass CORS. No manual opt-in required.
             const proxyUrl = 'https://api.allorigins.win/get?url=';
             // 新北市門牌位置資料 API (範例使用板橋區中山路資料)
             const targetUrl = encodeURIComponent('https://data.ntpc.gov.tw/api/datasets/d7b568ab-3819-40c8-a6e7-a6b199443101/json?page=0&size=5');
@@ -545,17 +545,28 @@
                     return response.json();
                 })
                 .then(data => {
-                    // allorigins returns data in 'contents' property, which is a string
-                    const actualData = JSON.parse(data.contents);
-                    console.log("API Success:", actualData);
-                    // 如果 API 成功，這裡可以更新 currentData 的部分欄位
-                    if (actualData && actualData.length > 0) {
-                        // 範例：將第一筆資料的座標顯示在 debug 資訊中
-                        const firstResult = actualData[0];
-                        currentData.apiDebug = `Real API Data: { district: '${firstResult.district}', road: '${firstResult.road}', x: ${firstResult.twd97x}, y: ${firstResult.twd97y} }`;
+                    // allorigins returns data in 'contents' property as a string
+                    // We need to parse it back to JSON
+                    try {
+                        const actualData = JSON.parse(data.contents);
+                        console.log("API Success:", actualData);
                         
-                        // 注意：因為這是 Demo，我們只更新 debug 訊息，
-                        // 主畫面還是顯示我們準備好的 MOCK_DB 內容，以確保 Demo 流程順暢
+                        // 如果 API 成功，這裡可以更新 currentData 的部分欄位
+                        if (Array.isArray(actualData) && actualData.length > 0) {
+                            // 範例：將第一筆資料的座標顯示在 debug 資訊中
+                            const firstResult = actualData[0];
+                            // Check if fields exist before accessing
+                            const dist = firstResult.district || '未知';
+                            const rd = firstResult.road || '未知';
+                            const x = firstResult.twd97x || 'N/A';
+                            const y = firstResult.twd97y || 'N/A';
+                            
+                            currentData.apiDebug = `Real API Data: { district: '${dist}', road: '${rd}', x: ${x}, y: ${y} }`;
+                        } else {
+                             console.warn("API returned empty array or unexpected format");
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse API response contents", e);
                     }
                 })
                 .catch(error => {
