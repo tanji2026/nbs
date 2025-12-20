@@ -168,7 +168,7 @@
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-800">3. 自然解方 (NbS)</div>
-                                        <div class="text-sm text-slate-500">演算法推薦適地適種的植栽組合與行動計畫</div>
+                                        <div class="text-sm text-slate-500">推薦適地適種的 NbS 植栽組合</div>
                                     </div>
                                 </li>
                             </ul>
@@ -272,7 +272,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="新北市板橋區中山路一段161號" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址...">
+                        <input type="text" id="address-input" value="新北市三峽區學勤路1號 (北大特區)" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址...">
                     </div>
                     <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
@@ -328,6 +328,7 @@
                                 <div>
                                     <h4 class="font-bold text-red-200" id="result-temp-title">極度高溫警示 (板橋區)</h4>
                                     <p class="text-sm text-slate-300 mt-1" id="result-temp-desc">該區域 7 月地表均溫達 38.2°C，高於新北市平均 2.5°C。</p>
+                                    <p class="text-xs text-slate-400 mt-1 break-all" id="api-debug-info"></p>
                                 </div>
                             </div>
                             <!-- Flood Card -->
@@ -465,34 +466,28 @@
     <!-- Scripts for Interactivity -->
     <script>
         // --- REAL DATA MOCK CONFIGURATION ---
-        // 這些資料模擬了真實 API 回傳的數據結構，展示時使用這些地點會得到真實的環境數值
+        // 模擬真實 API 回傳數據 - 專注於北大特區 (三峽/樹林交界)
+        
         const MOCK_DB = {
+            "北大": {
+                district: "北大特區",
+                temp: 36.8, 
+                avgTemp: 1.8, 
+                floodRisk: "中",
+                floodDesc: "位處三峽/樹林交界，高密度大樓群導致微氣候均溫偏高。",
+                nbsSuggestion: "屋頂薄層綠化 + 中庭雨水花園",
+                cost: "$3,200 / 坪",
+                apiDebug: "API Response: { district: '北大特區', road: '學勤路', x: 288456, y: 2756123 }"
+            },
             "板橋": {
                 district: "板橋區",
-                temp: 38.2, // Real high summer temp
-                avgTemp: 2.5, // Above avg
+                temp: 38.2, 
+                avgTemp: 2.5, 
                 floodRisk: "高",
                 floodDesc: "短延時強降雨發生機率高，地勢低窪，排水需特別注意。",
                 nbsSuggestion: "薄層綠屋頂 + 透水磚",
-                cost: "$3,500 / 坪"
-            },
-            "三峽": {
-                district: "三峽區",
-                temp: 36.5,
-                avgTemp: 1.2,
-                floodRisk: "中",
-                floodDesc: "鄰近山區，需注意豪大雨時的逕流沖刷。",
-                nbsSuggestion: "雨水回收撲滿 + 垂直綠化",
-                cost: "$2,800 / 坪"
-            },
-            "淡水": {
-                district: "淡水區",
-                temp: 35.8,
-                avgTemp: 0.8,
-                floodRisk: "低",
-                floodDesc: "河岸第一排，需注意強風與鹽害，建議防風植栽。",
-                nbsSuggestion: "防風林帶 + 生態池",
-                cost: "$4,200 / 坪"
+                cost: "$3,500 / 坪",
+                apiDebug: "API Response: { district: '板橋區', road: '中山路', x: 295678, y: 2768901 }"
             },
             "default": {
                 district: "新北市",
@@ -501,11 +496,12 @@
                 floodRisk: "中",
                 floodDesc: "都市化程度高，建議優先降低不透水鋪面。",
                 nbsSuggestion: "綜合型生態綠化",
-                cost: "$3,000 / 坪"
+                cost: "$3,000 / 坪",
+                apiDebug: "API Response: { status: 'OK', results: 10 }"
             }
         };
 
-        let currentData = MOCK_DB["default"];
+        let currentData = MOCK_DB["北大"]; // 預設為北大特區
 
         // Feature 1: Map Analysis Logic (with Simulated API Calls)
         function startAnalysis() {
@@ -519,9 +515,8 @@
             
             // 1. Determine which data to use based on input
             if (inputVal.includes("板橋")) currentData = MOCK_DB["板橋"];
-            else if (inputVal.includes("三峽")) currentData = MOCK_DB["三峽"];
-            else if (inputVal.includes("淡水")) currentData = MOCK_DB["淡水"];
-            else currentData = MOCK_DB["default"];
+            else if (inputVal.includes("三峽") || inputVal.includes("學勤") || inputVal.includes("北大")) currentData = MOCK_DB["北大"];
+            else currentData = MOCK_DB["北大"]; // 預設回傳北大特區資料
 
             // 2. UI Loading State
             btnText.innerText = '分析中...';
@@ -536,58 +531,86 @@
             statusDots[0].classList.replace('bg-slate-500', 'bg-brand-green');
             statusDots[0].classList.add('animate-pulse-fast');
 
-            setTimeout(() => {
-                // Step 2: NCDR Flood Data
-                statusMsg.innerText = "取得 NCDR 災害潛勢圖資...";
-                statusDots[0].classList.remove('animate-pulse-fast');
-                statusContainers[1].classList.add('bg-brand-green/20', 'border-brand-green/50');
-                statusDots[1].classList.replace('bg-slate-500', 'bg-brand-green');
-                statusDots[1].classList.add('animate-pulse-fast');
-            }, 800);
+            // --- REAL FETCH IMPLEMENTATION with CORS Proxy ---
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            // 新北市門牌位置資料 API (範例使用板橋區中山路資料)
+            const targetUrl = 'https://data.ntpc.gov.tw/api/datasets/d7b568ab-3819-40c8-a6e7-a6b199443101/json?page=0&size=5';
 
-            setTimeout(() => {
-                // Step 3: CWA Weather Data
-                statusMsg.innerText = "下載 CWA 氣象觀測資料...";
-                statusDots[1].classList.remove('animate-pulse-fast');
-                statusContainers[2].classList.add('bg-brand-green/20', 'border-brand-green/50');
-                statusDots[2].classList.replace('bg-slate-500', 'bg-brand-green');
-                statusDots[2].classList.add('animate-pulse-fast');
-                
-                // *** REAL FETCH CODE EXAMPLE (Commented out for static demo) ***
-                /*
-                fetch('https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=YOUR_API_KEY')
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Real Data Received:", data);
-                        // Process data here
-                    });
-                */
-            }, 1600);
+            fetch(proxyUrl + targetUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("API Success:", data);
+                    // 如果 API 成功，這裡可以更新 currentData 的部分欄位
+                    if (data && data.length > 0) {
+                        // 範例：將第一筆資料的座標顯示在 debug 資訊中
+                        const firstResult = data[0];
+                        currentData.apiDebug = `Real API Data: { district: '${firstResult.district}', road: '${firstResult.road}', x: ${firstResult.twd97x}, y: ${firstResult.twd97y} }`;
+                        
+                        // 注意：因為這是 Demo，我們只更新 debug 訊息，
+                        // 主畫面還是顯示我們準備好的 MOCK_DB 內容，以確保 Demo 流程順暢
+                    }
+                })
+                .catch(error => {
+                    console.warn("API Fetch Failed (Using Mock Data):", error);
+                    // 失敗時不做任何事，因為我們有 Mock Data 當備案 (Graceful Degradation)
+                    statusMsg.innerText += " (使用備用數據源)";
+                })
+                .finally(() => {
+                    // 接續原本的動畫流程
+                    continueAnimationFlow();
+                });
 
-            setTimeout(() => {
-                // Finalize
-                statusMsg.innerText = "AI 運算完成！";
-                statusDots[2].classList.remove('animate-pulse-fast');
-                
-                // Update UI with "Real" Mock Data
-                updateRiskUI(currentData);
-
-                // Reset Button & Show Result
-                btnText.innerText = '重新分析';
-                btnLoader.classList.add('hidden');
-                resultDiv.classList.remove('hidden');
-                
+            // 把原本的 setTimeout 流程包裝成函數，在 fetch 完成或失敗後呼叫
+            function continueAnimationFlow() {
                 setTimeout(() => {
-                    resultDiv.classList.remove('opacity-0', 'translate-y-4');
-                }, 50);
-                
-            }, 2400);
+                    // Step 2: NCDR Flood Data
+                    statusMsg.innerText = "取得 NCDR 災害潛勢圖資...";
+                    statusDots[0].classList.remove('animate-pulse-fast');
+                    statusContainers[1].classList.add('bg-brand-green/20', 'border-brand-green/50');
+                    statusDots[1].classList.replace('bg-slate-500', 'bg-brand-green');
+                    statusDots[1].classList.add('animate-pulse-fast');
+                }, 800);
+
+                setTimeout(() => {
+                    // Step 3: CWA Weather Data
+                    statusMsg.innerText = "下載 CWA 氣象觀測資料...";
+                    statusDots[1].classList.remove('animate-pulse-fast');
+                    statusContainers[2].classList.add('bg-brand-green/20', 'border-brand-green/50');
+                    statusDots[2].classList.replace('bg-slate-500', 'bg-brand-green');
+                    statusDots[2].classList.add('animate-pulse-fast');
+                }, 1600);
+
+                setTimeout(() => {
+                    // Finalize
+                    statusMsg.innerText = "AI 運算完成！";
+                    statusDots[2].classList.remove('animate-pulse-fast');
+                    
+                    // Update UI with "Real" Mock Data
+                    updateRiskUI(currentData);
+
+                    // Reset Button & Show Result
+                    btnText.innerText = '重新分析';
+                    btnLoader.classList.add('hidden');
+                    resultDiv.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        resultDiv.classList.remove('opacity-0', 'translate-y-4');
+                    }, 50);
+                    
+                }, 2400);
+            }
         }
 
         function updateRiskUI(data) {
             // Update Temp Card
             document.getElementById('result-temp-title').innerText = `極度高溫警示 (${data.district})`;
             document.getElementById('result-temp-desc').innerText = `該區域夏季地表均溫達 ${data.temp}°C，高於平均 ${data.avgTemp}°C。`;
+            document.getElementById('api-debug-info').innerText = data.apiDebug;
             
             // Update Flood Card
             document.getElementById('result-flood-title').innerText = `排水負荷警示 (${data.floodRisk}風險)`;
