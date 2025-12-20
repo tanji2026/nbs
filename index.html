@@ -309,6 +309,17 @@
 
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
                         
+                        <!-- 0. 申請單位資料 (NEW) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">申請單位 (社區全銜)</label>
+                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="如：XX社區管理委員會">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">社區地址</label>
+                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
+                        </div>
+
                         <!-- 1. 選擇改造項目 -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">計畫改造項目</label>
@@ -319,7 +330,7 @@
                             </select>
                         </div>
 
-                        <!-- 2. 社區總戶數 (NEW) -->
+                        <!-- 2. 社區總戶數 -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">社區總戶數</label>
                             <div class="relative">
@@ -465,6 +476,11 @@
                 btnLoader.classList.add('hidden');
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 // 這裡可加入 address 判斷邏輯更新 currentData
+                // 自動填入搜尋的地址到申請書欄位
+                const searchedAddress = document.getElementById('address-input').value;
+                if(searchedAddress) {
+                    document.getElementById('sim-address').value = searchedAddress;
+                }
             }, 1500);
         }
 
@@ -603,7 +619,10 @@
 
         // Feature 3: Generate Document
         function generateSubsidyDoc() {
-            const address = document.getElementById('address-input').value;
+            // Get user input for Org Name and Address
+            const orgName = document.getElementById('sim-org-name').value || "申請單位未填寫";
+            const address = document.getElementById('sim-address').value || "地址未填寫";
+            
             const area = document.getElementById('sim-area').value;
             const households = document.getElementById('sim-households').value;
             const type = document.getElementById('sim-type').value;
@@ -632,7 +651,8 @@
                         new Table({
                             width: { size: 100, type: WidthType.PERCENTAGE },
                             rows: [
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(orgName)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區地址", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區戶數", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(households + " 戶")], ...cellStyle }) ]}),
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(config.title)], ...cellStyle }) ]}),
                             ]
@@ -654,7 +674,7 @@
                 }]
             });
 
-            Packer.toBlob(doc).then(blob => saveAs(blob, `${address}_改造計畫書.docx`));
+            Packer.toBlob(doc).then(blob => saveAs(blob, `${orgName}_改造計畫書.docx`));
         }
     </script>
 </body>
