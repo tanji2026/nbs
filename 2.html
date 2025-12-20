@@ -15,6 +15,11 @@
     <!-- 引入 Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
+    <!-- 引入 docx.js (文件生成) -->
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <!-- 引入 FileSaver.js (檔案下載) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -150,7 +155,7 @@
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-800">1. 數據匯流 (Data Ingestion)</div>
-                                        <div class="text-sm text-slate-500">即時串接中央氣象署(CWA)與新北市門牌圖資 API</div>
+                                        <div class="text-sm text-slate-500">串接氣象局與新北市GIS圖資</div>
                                     </div>
                                 </li>
                                 <li class="flex items-center gap-4">
@@ -159,7 +164,7 @@
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-800">2. 風險指認 (Risk ID)</div>
-                                        <div class="text-sm text-slate-500">AI 判讀熱島熱點與淹水潛勢</div>
+                                        <div class="text-sm text-slate-500">AI 判讀都市熱島熱點與 NCDR 淹水潛勢圖</div>
                                     </div>
                                 </li>
                                 <li class="flex items-center gap-4">
@@ -179,15 +184,13 @@
                             <div class="relative z-10 grid grid-cols-2 gap-4">
                                 <div class="bg-white p-4 rounded-lg shadow-sm text-center">
                                     <i class="fa-solid fa-cloud-rain text-3xl text-blue-500 mb-2"></i>
-                                    <div class="font-bold text-sm mt-2">CWA 氣象資料</div>
-                                    <div class="text-xs text-slate-400">API: O-A0001-001</div>
+                                    <div class="font-bold text-sm">氣候數據</div>
                                 </div>
                                 <div class="bg-white p-4 rounded-lg shadow-sm text-center">
                                     <i class="fa-solid fa-building text-3xl text-slate-500 mb-2"></i>
-                                    <div class="font-bold text-sm mt-2">TGOS 門牌定位</div>
-                                    <div class="text-xs text-slate-400">API: Address Lookup</div>
+                                    <div class="font-bold text-sm">建築圖資</div>
                                 </div>
-                                <div class="col-span-2 bg-brand-green text-white p-4 rounded-lg shadow-lg text-center transform scale-105 border-2 border-emerald-400">
+                                <div class="col-span-2 bg-brand-green text-white p-4 rounded-lg shadow-lg text-center transform scale-105">
                                     <i class="fa-solid fa-microchip text-3xl mb-2"></i>
                                     <div class="font-bold text-lg">TanJi AI 核心引擎</div>
                                     <div class="text-xs opacity-80 mt-1">熱點分析 | 效益模擬 | 計畫生成</div>
@@ -328,7 +331,7 @@
                                 <div>
                                     <h4 class="font-bold text-red-200" id="result-temp-title">極度高溫警示 (板橋區)</h4>
                                     <p class="text-sm text-slate-300 mt-1" id="result-temp-desc">該區域 7 月地表均溫達 38.2°C，高於新北市平均 2.5°C。</p>
-                                    <p class="text-xs text-slate-400 mt-1 break-all" id="api-debug-info"></p>
+                                    <p class="text-xs text-slate-400 mt-1" id="api-debug-info"></p>
                                 </div>
                             </div>
                             <!-- Flood Card -->
@@ -350,50 +353,78 @@
         </div>
     </section>
 
-    <!-- Interactive Demo Section 2: Simulator -->
+    <!-- Interactive Demo Section 2: Simulator & Plan Generation -->
     <section id="demo-sim" class="py-20 bg-slate-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row gap-12 items-center">
+            <div class="flex flex-col md:flex-row gap-12 items-start">
+                
                 <!-- Left: Controls -->
-                <div class="w-full md:w-1/3">
-                    <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
-                    <h2 class="text-3xl font-bold mt-2 text-slate-900 mb-6">NbS 效益模擬器</h2>
-                    <p class="text-slate-600 mb-8" id="sim-desc">
-                        針對您的新北市社區頂樓，我們建議建置「薄層綠屋頂」。試著切換開關，預覽導入 NbS 後的真實環境效益。
-                    </p>
+                <div class="w-full md:w-1/3 space-y-8 sticky top-24">
                     
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-bold text-slate-700">改造狀態</span>
-                            <div class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <!-- Header -->
+                    <div>
+                        <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
+                        <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 效益模擬器</h2>
+                        <p class="text-slate-600 mt-4" id="sim-desc">
+                            試著輸入施作面積並開啟模擬，系統將自動計算經費與減碳效益，並生成計畫書。
+                        </p>
+                    </div>
+
+                    <!-- Control Panel -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                        
+                        <!-- 1. 輸入面積 -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">預計施作面積 (坪)</label>
+                            <div class="relative">
+                                <input type="number" id="sim-area" value="30" oninput="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition font-mono text-lg text-right">
+                                <span class="absolute left-4 top-2.5 text-slate-400 text-sm"><i class="fa-solid fa-ruler-combined"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- 2. 開關模擬 -->
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-700">啟用 NbS 改造模擬</span>
+                            <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
                                 <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 top-[-4px] left-[-4px]" onchange="toggleSimulation()"/>
                                 <label for="sim-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
                             </div>
                         </div>
-                        <p class="text-sm text-slate-500" id="toggle-status">目前顯示：原始水泥隔熱磚</p>
+
+                        <!-- 3. 即時經費試算 (顯示區) -->
+                        <div id="cost-preview" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm space-y-3 animate-pulse-fast" style="animation-iteration-count: 1;">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">預估總經費</span>
+                                <span class="font-bold text-slate-800 text-lg" id="val-total-cost">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-brand-green">
+                                <span><i class="fa-solid fa-hand-holding-dollar mr-1"></i> 政府補助 (約50%)</span>
+                                <span class="font-bold text-lg" id="val-subsidy">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center border-t border-slate-200 pt-3">
+                                <span class="text-slate-500">預估回收年限</span>
+                                <span class="font-bold text-slate-800" id="val-roi">-- 年</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mt-8 space-y-3">
-                         <div class="flex items-center gap-3 text-slate-600">
-                            <i class="fa-solid fa-check text-brand-green"></i>
-                            <span>植栽類型：台灣原生耐旱多肉植物</span>
-                         </div>
-                         <div class="flex items-center gap-3 text-slate-600">
-                            <i class="fa-solid fa-check text-brand-green"></i>
-                            <span>預估造價：$3,500 / 坪 (符合補助標準)</span>
-                         </div>
-                    </div>
+                    <!-- Action Button (一鍵生成) -->
+                    <button id="btn-generate" onclick="generateSubsidyDoc()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-file-signature"></i>
+                        一鍵生成改造補助計畫書
+                    </button>
+                    <p class="text-center text-xs text-slate-400 mt-2">* 系統將自動生成符合新北市環保局格式之 Word 檔</p>
                 </div>
 
                 <!-- Right: Visualizer -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden">
                     <!-- Before/After Image (Concept) -->
-                    <div class="h-64 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group">
+                    <div class="h-80 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group">
                         <!-- Image A: Concrete (Using a placeholder color/icon for stability) -->
                         <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
                             <div class="text-center">
                                 <i class="fa-solid fa-layer-group text-6xl text-slate-600 mb-2"></i>
-                                <p class="text-slate-200 font-bold">原始水泥屋頂</p>
+                                <p class="text-slate-200 font-bold text-xl">原始水泥屋頂</p>
                             </div>
                         </div>
                         
@@ -401,7 +432,7 @@
                         <div id="img-after" class="absolute inset-0 w-full h-full bg-emerald-600 flex items-center justify-center opacity-0 transition-opacity duration-700">
                              <div class="text-center">
                                 <i class="fa-solid fa-seedling text-6xl text-white mb-2"></i>
-                                <p class="text-white font-bold">導入綠屋頂後</p>
+                                <p class="text-white font-bold text-xl">導入綠屋頂後</p>
                             </div>
                         </div>
                         
@@ -411,27 +442,27 @@
                     </div>
 
                     <!-- Charts -->
-                    <div class="space-y-6">
+                    <div class="space-y-8">
                         <!-- Temp Bar -->
                         <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-sm font-bold text-slate-600">頂樓夏季表面溫度</span>
-                                <span id="val-temp" class="text-sm font-bold text-red-500">55°C</span>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
+                                <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-4">
-                                <div id="bar-temp" class="bg-red-500 h-4 rounded-full bar-transition" style="width: 95%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm" style="width: 95%"></div>
                             </div>
-                            <p class="text-xs text-slate-400 mt-1">*依據新北市夏季實測數據</p>
+                            <p class="text-xs text-slate-400 mt-1">*依據新北市夏季實測數據推估</p>
                         </div>
 
                         <!-- Carbon Bar -->
                         <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-sm font-bold text-slate-600">年節電效益 (每100坪)</span>
-                                <span id="val-carbon" class="text-sm font-bold text-slate-400">0 度</span>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600"><i class="fa-solid fa-bolt mr-2"></i>年節電效益 (預估)</span>
+                                <span id="val-carbon" class="text-base font-bold text-slate-400">0 度</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-4">
-                                <div id="bar-carbon" class="bg-brand-green h-4 rounded-full bar-transition" style="width: 2%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6">
+                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
                             </div>
                         </div>
                     </div>
@@ -476,7 +507,7 @@
                 floodRisk: "中",
                 floodDesc: "位處三峽/樹林交界，高密度大樓群導致微氣候均溫偏高。",
                 nbsSuggestion: "屋頂薄層綠化 + 中庭雨水花園",
-                cost: "$3,200 / 坪",
+                cost: 25000, // 每坪單價
                 apiDebug: "API Response: { district: '北大特區', road: '學勤路', x: 288456, y: 2756123 }"
             },
             "板橋": {
@@ -486,7 +517,7 @@
                 floodRisk: "高",
                 floodDesc: "短延時強降雨發生機率高，地勢低窪，排水需特別注意。",
                 nbsSuggestion: "薄層綠屋頂 + 透水磚",
-                cost: "$3,500 / 坪",
+                cost: 28000,
                 apiDebug: "API Response: { district: '板橋區', road: '中山路', x: 295678, y: 2768901 }"
             },
             "default": {
@@ -496,12 +527,16 @@
                 floodRisk: "中",
                 floodDesc: "都市化程度高，建議優先降低不透水鋪面。",
                 nbsSuggestion: "綜合型生態綠化",
-                cost: "$3,000 / 坪",
+                cost: 25000,
                 apiDebug: "API Response: { status: 'OK', results: 10 }"
             }
         };
 
         let currentData = MOCK_DB["北大"]; // 預設為北大特區
+
+        // Constants for Calculation
+        const ELECTRICITY_RATE = 4.5; // 每度電費 (假設)
+        const CO2_COEF = 0.495; // 排碳係數
 
         // Feature 1: Map Analysis Logic (with Simulated API Calls)
         function startAnalysis() {
@@ -531,93 +566,42 @@
             statusDots[0].classList.replace('bg-slate-500', 'bg-brand-green');
             statusDots[0].classList.add('animate-pulse-fast');
 
-            // --- REAL FETCH IMPLEMENTATION with CORS Proxy (allorigins.win) ---
-            // Using allorigins.win to bypass CORS. No manual opt-in required.
-            const proxyUrl = 'https://api.allorigins.win/get?url=';
-            // 新北市門牌位置資料 API (範例使用板橋區中山路資料)
-            const targetUrl = encodeURIComponent('https://data.ntpc.gov.tw/api/datasets/d7b568ab-3819-40c8-a6e7-a6b199443101/json?page=0&size=5');
+            setTimeout(() => {
+                // Step 2: NCDR Flood Data
+                statusMsg.innerText = "取得 NCDR 災害潛勢圖資...";
+                statusDots[0].classList.remove('animate-pulse-fast');
+                statusContainers[1].classList.add('bg-brand-green/20', 'border-brand-green/50');
+                statusDots[1].classList.replace('bg-slate-500', 'bg-brand-green');
+                statusDots[1].classList.add('animate-pulse-fast');
+            }, 800);
 
-            fetch(proxyUrl + targetUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // allorigins returns data in 'contents' property as a string
-                    // We need to parse it back to JSON
-                    try {
-                        const actualData = JSON.parse(data.contents);
-                        console.log("API Success:", actualData);
-                        
-                        // 如果 API 成功，這裡可以更新 currentData 的部分欄位
-                        if (Array.isArray(actualData) && actualData.length > 0) {
-                            // 範例：將第一筆資料的座標顯示在 debug 資訊中
-                            const firstResult = actualData[0];
-                            // Check if fields exist before accessing
-                            const dist = firstResult.district || '未知';
-                            const rd = firstResult.road || '未知';
-                            const x = firstResult.twd97x || 'N/A';
-                            const y = firstResult.twd97y || 'N/A';
-                            
-                            currentData.apiDebug = `Real API Data: { district: '${dist}', road: '${rd}', x: ${x}, y: ${y} }`;
-                        } else {
-                             console.warn("API returned empty array or unexpected format");
-                        }
-                    } catch (e) {
-                        console.warn("Failed to parse API response contents", e);
-                    }
-                })
-                .catch(error => {
-                    console.warn("API Fetch Failed (Using Mock Data):", error);
-                    // 失敗時不做任何事，因為我們有 Mock Data 當備案 (Graceful Degradation)
-                    statusMsg.innerText += " (使用備用數據源)";
-                })
-                .finally(() => {
-                    // 接續原本的動畫流程
-                    continueAnimationFlow();
-                });
+            setTimeout(() => {
+                // Step 3: CWA Weather Data
+                statusMsg.innerText = "下載 CWA 氣象觀測資料...";
+                statusDots[1].classList.remove('animate-pulse-fast');
+                statusContainers[2].classList.add('bg-brand-green/20', 'border-brand-green/50');
+                statusDots[2].classList.replace('bg-slate-500', 'bg-brand-green');
+                statusDots[2].classList.add('animate-pulse-fast');
+            }, 1600);
 
-            // 把原本的 setTimeout 流程包裝成函數，在 fetch 完成或失敗後呼叫
-            function continueAnimationFlow() {
+            setTimeout(() => {
+                // Finalize
+                statusMsg.innerText = "AI 運算完成！";
+                statusDots[2].classList.remove('animate-pulse-fast');
+                
+                // Update UI with "Real" Mock Data
+                updateRiskUI(currentData);
+
+                // Reset Button & Show Result
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                resultDiv.classList.remove('hidden');
+                
                 setTimeout(() => {
-                    // Step 2: NCDR Flood Data
-                    statusMsg.innerText = "取得 NCDR 災害潛勢圖資...";
-                    statusDots[0].classList.remove('animate-pulse-fast');
-                    statusContainers[1].classList.add('bg-brand-green/20', 'border-brand-green/50');
-                    statusDots[1].classList.replace('bg-slate-500', 'bg-brand-green');
-                    statusDots[1].classList.add('animate-pulse-fast');
-                }, 800);
-
-                setTimeout(() => {
-                    // Step 3: CWA Weather Data
-                    statusMsg.innerText = "下載 CWA 氣象觀測資料...";
-                    statusDots[1].classList.remove('animate-pulse-fast');
-                    statusContainers[2].classList.add('bg-brand-green/20', 'border-brand-green/50');
-                    statusDots[2].classList.replace('bg-slate-500', 'bg-brand-green');
-                    statusDots[2].classList.add('animate-pulse-fast');
-                }, 1600);
-
-                setTimeout(() => {
-                    // Finalize
-                    statusMsg.innerText = "AI 運算完成！";
-                    statusDots[2].classList.remove('animate-pulse-fast');
-                    
-                    // Update UI with "Real" Mock Data
-                    updateRiskUI(currentData);
-
-                    // Reset Button & Show Result
-                    btnText.innerText = '重新分析';
-                    btnLoader.classList.add('hidden');
-                    resultDiv.classList.remove('hidden');
-                    
-                    setTimeout(() => {
-                        resultDiv.classList.remove('opacity-0', 'translate-y-4');
-                    }, 50);
-                    
-                }, 2400);
-            }
+                    resultDiv.classList.remove('opacity-0', 'translate-y-4');
+                }, 50);
+                
+            }, 2400);
         }
 
         function updateRiskUI(data) {
@@ -631,15 +615,63 @@
             document.getElementById('result-flood-desc').innerText = data.floodDesc;
 
             // Update Simulation Intro Text
-            document.getElementById('sim-desc').innerText = `針對您的${data.district}社區環境，我們建議建置「${data.nbsSuggestion}」。試著切換開關，預覽導入 NbS 後的環境效益。`;
+            document.getElementById('sim-desc').innerText = `針對您的${data.district}社區環境，我們建議建置「${data.nbsSuggestion}」。請輸入預計施作面積，開啟模擬以計算經費。`;
         }
 
-        // Feature 2: Simulation Toggle Logic
+        // Feature 2: Simulation & Calculation Logic
+        function updateCalculations() {
+            const area = parseInt(document.getElementById('sim-area').value) || 0;
+            const isToggled = document.getElementById('sim-toggle').checked;
+            const costPreview = document.getElementById('cost-preview');
+            const generateBtn = document.getElementById('btn-generate');
+
+            if (!isToggled) {
+                costPreview.classList.add('hidden');
+                generateBtn.disabled = true;
+                return;
+            }
+
+            costPreview.classList.remove('hidden');
+            generateBtn.disabled = false;
+
+            // 經費計算
+            const totalCost = area * currentData.cost;
+            const subsidy = Math.floor(totalCost * 0.5); // 補助上限 50%
+            
+            // 效益計算 (假設每坪綠屋頂每年省電 60 度 - 參數化)
+            const annualPowerSave = area * 60; 
+            const annualMoneySave = annualPowerSave * ELECTRICITY_RATE;
+            
+            // 回收年限 = (總價 - 補助) / 年省電費
+            const roi = annualMoneySave > 0 ? ((totalCost - subsidy) / annualMoneySave).toFixed(1) : "N/A";
+
+            // 更新數字 UI
+            document.getElementById('val-total-cost').innerText = `NT$ ${totalCost.toLocaleString()}`;
+            document.getElementById('val-subsidy').innerText = `NT$ ${subsidy.toLocaleString()}`;
+            document.getElementById('val-roi').innerText = `${roi} 年`;
+            
+            // 更新圖表 Bar
+            const barCarbon = document.getElementById('bar-carbon');
+            const valCarbon = document.getElementById('val-carbon');
+            
+            // 動態調整 Bar 寬度 (設定一個 max 值做比例，例如 300坪為滿格)
+            const maxPowerSave = 300 * 60; 
+            const percentage = Math.min((annualPowerSave / maxPowerSave) * 100, 100);
+            
+            barCarbon.style.width = Math.max(percentage, 5) + '%';
+            barCarbon.classList.remove('bg-slate-300');
+            barCarbon.classList.add('bg-brand-green');
+            
+            valCarbon.innerText = `${annualPowerSave.toLocaleString()} 度`;
+            valCarbon.classList.remove('text-slate-400');
+            valCarbon.classList.add('text-brand-green');
+        }
+
         function toggleSimulation() {
             const isChecked = document.getElementById('sim-toggle').checked;
             
             // Elements
-            const label = document.getElementById('toggle-status');
+            const label = document.getElementById('toggle-status'); // removed in new design but kept var for safety
             const imgBefore = document.getElementById('img-before');
             const imgAfter = document.getElementById('img-after');
             const imgLabel = document.getElementById('img-label');
@@ -648,54 +680,163 @@
             const barTemp = document.getElementById('bar-temp');
             const valTemp = document.getElementById('val-temp');
             
-            const barCarbon = document.getElementById('bar-carbon');
-            const valCarbon = document.getElementById('val-carbon');
-            
-            // Use current mock data for realistic simulation values
+            // Use current mock data
             const highTemp = currentData.temp; 
-            const lowTemp = (currentData.temp - 4.5).toFixed(1); // Simulate cooling
+            const lowTemp = (currentData.temp - 4.5).toFixed(1);
 
             if (isChecked) {
-                // State: Improved (Green Roof)
-                label.innerText = `目前顯示：改造後 (${currentData.nbsSuggestion})`;
-                label.classList.add('text-brand-green', 'font-bold');
-                
+                // State: Improved
                 imgAfter.classList.remove('opacity-0');
                 imgLabel.innerText = '模擬效果';
                 imgBadge.classList.replace('bg-black/60', 'bg-brand-green/90');
 
-                // Update Charts 
+                // Update Temp Chart 
                 barTemp.style.width = '50%'; 
                 barTemp.classList.replace('bg-red-500', 'bg-brand-green');
                 valTemp.innerText = `${lowTemp}°C`;
                 valTemp.classList.replace('text-red-500', 'text-brand-green');
 
-                // Power saving
-                barCarbon.style.width = '80%'; 
-                valCarbon.innerText = '2,500 度'; // Estimated saving
-                valCarbon.classList.remove('text-slate-400');
-                valCarbon.classList.add('text-brand-green');
-
             } else {
-                // State: Original (Concrete)
-                label.innerText = '目前顯示：原始水泥隔熱磚';
-                label.classList.remove('text-brand-green', 'font-bold');
-                
+                // State: Original
                 imgAfter.classList.add('opacity-0');
                 imgLabel.innerText = '原始現況';
                 imgBadge.classList.replace('bg-brand-green/90', 'bg-black/60');
 
-                // Update Charts (Worse values)
+                // Reset Temp Chart
                 barTemp.style.width = '95%'; 
                 barTemp.classList.replace('bg-brand-green', 'bg-red-500');
                 valTemp.innerText = `${highTemp}°C`;
                 valTemp.classList.replace('text-brand-green', 'text-red-500');
-
-                barCarbon.style.width = '2%'; // Low saving
+                
+                // Reset Carbon Chart (in updateCalculations)
+                const barCarbon = document.getElementById('bar-carbon');
+                const valCarbon = document.getElementById('val-carbon');
+                barCarbon.style.width = '2%';
+                barCarbon.classList.remove('bg-brand-green');
+                barCarbon.classList.add('bg-slate-300');
                 valCarbon.innerText = '0 度';
                 valCarbon.classList.remove('text-brand-green');
                 valCarbon.classList.add('text-slate-400');
             }
+            
+            // Trigger calculation update
+            updateCalculations();
+        }
+
+        // Feature 3: Generate Document (docx.js)
+        function generateSubsidyDoc() {
+            // 1. 獲取當前模擬數據
+            const address = document.getElementById('address-input').value || "新北市某社區";
+            const area = document.getElementById('sim-area').value || "0";
+            const totalCostStr = document.getElementById('val-total-cost').innerText;
+            const subsidyStr = document.getElementById('val-subsidy').innerText;
+            const roiStr = document.getElementById('val-roi').innerText;
+            const annualSave = document.getElementById('val-carbon').innerText;
+            
+            const itemName = currentData.nbsSuggestion || "薄層綠屋頂";
+            const itemDesc = `於社區頂樓施作${itemName}，面積共 ${area} 坪。採用原生耐旱植栽，設置自動澆灌系統。`;
+
+            // 2. 使用 docx.js 構建文檔
+            const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, TextRun, BorderStyle } = docx;
+
+            // 定義表格樣式 helper
+            const cellStyle = {
+                borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                },
+                margins: { top: 100, bottom: 100, left: 100, right: 100 }
+            };
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        // 標題
+                        new Paragraph({
+                            text: "114年度新北市低碳社區改造補助計畫申請表",
+                            heading: docx.HeadingLevel.HEADING_1,
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 400 }
+                        }),
+
+                        // 基本資料區
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph({text: "申請單位", bold: true})], ...cellStyle, width: {size: 30, type: WidthType.PERCENTAGE} }),
+                                    new TableCell({ children: [new Paragraph(address)], ...cellStyle }),
+                                ]}),
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph({text: "改造項目", bold: true})], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(itemName)], ...cellStyle }),
+                                ]}),
+                            ]
+                        }),
+
+                        new Paragraph({ text: "", spacing: { after: 400 } }),
+
+                        // 改造內容
+                        new Paragraph({ text: "一、現況說明與改善方式", heading: docx.HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+                        new Paragraph({ text: itemDesc, spacing: { after: 400 } }),
+
+                        // 經費表格
+                        new Paragraph({ text: "二、經費評估與預估效益", heading: docx.HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({ 
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({text: "項目", bold: true, alignment: AlignmentType.CENTER})], ...cellStyle, shading: {fill: "EEEEEE"} }),
+                                        new TableCell({ children: [new Paragraph({text: "數值", bold: true, alignment: AlignmentType.CENTER})], ...cellStyle, shading: {fill: "EEEEEE"} }),
+                                        new TableCell({ children: [new Paragraph({text: "說明", bold: true, alignment: AlignmentType.CENTER})], ...cellStyle, shading: {fill: "EEEEEE"} }),
+                                    ]
+                                }),
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph("施作面積")], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(`${area} 坪`)], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph("預計改造範圍")], ...cellStyle }),
+                                ]}),
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph("預估總經費")], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(totalCostStr)], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph("含工資與稅金")], ...cellStyle }),
+                                ]}),
+                                 new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph("申請補助金額")], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(subsidyStr)], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph("申請最高 50%")], ...cellStyle }),
+                                ]}),
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph("預估年省電量")], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(annualSave)], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph("依據模擬推估")], ...cellStyle }),
+                                ]}),
+                                new TableRow({ children: [
+                                    new TableCell({ children: [new Paragraph("預估回收年限")], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph(roiStr)], ...cellStyle }),
+                                    new TableCell({ children: [new Paragraph("投資效益分析")], ...cellStyle }),
+                                ]}),
+                            ]
+                        }),
+
+                        new Paragraph({ 
+                            text: "\n※ 本計畫書由 TanJi 碳吉決策平台 AI 自動生成，僅供申請參考。", 
+                            alignment: AlignmentType.CENTER,
+                            color: "808080",
+                            spacing: { before: 600 }
+                        })
+                    ]
+                }]
+            });
+
+            // 3. 下載檔案
+            Packer.toBlob(doc).then(blob => {
+                saveAs(blob, `${address}_改造補助計畫書_草案.docx`);
+            });
         }
     </script>
 </body>
