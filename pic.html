@@ -56,6 +56,7 @@
             height: auto;
             display: block;
             margin: 0 auto;
+            overflow: visible; /* Ensure content isn't strictly clipped if slightly out */
         }
 
         .box { fill: #fff; stroke: #333; stroke-width: 2; }
@@ -174,7 +175,8 @@
     <div class="paper-sheet">
         <h1>圖面二：服務流程圖 (Service Flow)</h1>
         
-        <svg viewBox="0 0 800 500">
+        <!-- Increased ViewBox width from 800 to 900 to prevent cropping on the right -->
+        <svg viewBox="0 0 900 500">
             <defs>
                 <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#059669" />
@@ -252,7 +254,8 @@
         
         <!-- Isometric SVG -->
         <svg viewBox="0 0 800 600">
-            <g transform="translate(400, 100)">
+            <!-- Moved group down to translate(400, 300) to avoid cropping at top -->
+            <g transform="translate(400, 300)">
                 <!-- Laptop Base -->
                 <path d="M -200 100 L 200 100 L 220 120 L -220 120 Z" fill="#cbd5e1" stroke="#475569"/>
                 <path d="M -220 120 L 220 120 L 220 130 L -220 130 Z" fill="#94a3b8"/>
