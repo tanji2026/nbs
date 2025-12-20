@@ -159,7 +159,7 @@
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-800">2. 風險指認 (Risk ID)</div>
-                                        <div class="text-sm text-slate-500">AI 判讀都市熱島熱點與 NCDR 淹水潛勢圖</div>
+                                        <div class="text-sm text-slate-500">AI 判讀熱島熱點與淹水潛勢</div>
                                     </div>
                                 </li>
                                 <li class="flex items-center gap-4">
@@ -532,9 +532,10 @@
             statusDots[0].classList.add('animate-pulse-fast');
 
             // --- REAL FETCH IMPLEMENTATION with CORS Proxy ---
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            // Changed from cors-anywhere to allorigins to avoid 403 Forbidden
+            const proxyUrl = 'https://api.allorigins.win/get?url=';
             // 新北市門牌位置資料 API (範例使用板橋區中山路資料)
-            const targetUrl = 'https://data.ntpc.gov.tw/api/datasets/d7b568ab-3819-40c8-a6e7-a6b199443101/json?page=0&size=5';
+            const targetUrl = encodeURIComponent('https://data.ntpc.gov.tw/api/datasets/d7b568ab-3819-40c8-a6e7-a6b199443101/json?page=0&size=5');
 
             fetch(proxyUrl + targetUrl)
                 .then(response => {
@@ -544,11 +545,13 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log("API Success:", data);
+                    // allorigins returns data in 'contents' property, which is a string
+                    const actualData = JSON.parse(data.contents);
+                    console.log("API Success:", actualData);
                     // 如果 API 成功，這裡可以更新 currentData 的部分欄位
-                    if (data && data.length > 0) {
+                    if (actualData && actualData.length > 0) {
                         // 範例：將第一筆資料的座標顯示在 debug 資訊中
-                        const firstResult = data[0];
+                        const firstResult = actualData[0];
                         currentData.apiDebug = `Real API Data: { district: '${firstResult.district}', road: '${firstResult.road}', x: ${firstResult.twd97x}, y: ${firstResult.twd97y} }`;
                         
                         // 注意：因為這是 Demo，我們只更新 debug 訊息，
