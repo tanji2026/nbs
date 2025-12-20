@@ -252,11 +252,10 @@
     <!-- Interactive Demo 2: Simulator -->
     <section id="demo-sim" class="py-20 bg-slate-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Flex Direction Changed: flex-col-reverse on mobile, md:flex-row on desktop -->
-            <!-- Note: Originally left was controls, right was visual. Now swapping. -->
+            <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
             <div class="flex flex-col-reverse md:flex-row gap-12 items-start">
                 
-                <!-- Left: Visualizer (Formerly Right) -->
+                <!-- Left: Visualizer -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col h-full">
                     <div class="h-80 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group shrink-0">
                         <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
@@ -298,7 +297,7 @@
                     </div>
                 </div>
 
-                <!-- Right: Controls (Formerly Left) -->
+                <!-- Right: Controls & Generation -->
                 <div class="w-full md:w-1/3 space-y-8 sticky top-24">
                     <div>
                         <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
@@ -355,7 +354,7 @@
                         </div>
                     </div>
 
-                    <!-- Action Button (Kept in Controls) -->
+                    <!-- Action Button -->
                     <button id="btn-generate" onclick="generateSubsidyDoc()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i class="fa-solid fa-file-signature"></i>
                         一鍵生成改造補助計畫書
@@ -435,6 +434,7 @@
 
         const ELECTRICITY_RATE = 4.5; 
         const WATER_RATE = 12; // 水費假設
+        const MAX_SUBSIDY = 300000; // 大型社區補助上限 30 萬
 
         // Feature 1: Map Analysis (Simplified for this demo)
         function startAnalysis() {
@@ -478,7 +478,16 @@
 
             // 經費計算
             const totalCost = area * config.cost;
-            const subsidy = Math.floor(totalCost * config.subsidyRate);
+            let subsidy = Math.floor(totalCost * config.subsidyRate);
+            
+            // 補助上限檢查
+            let subsidyText = `NT$ ${subsidy.toLocaleString()}`;
+            if (subsidy > MAX_SUBSIDY) {
+                subsidy = MAX_SUBSIDY;
+                subsidyText = `NT$ ${subsidy.toLocaleString()} (已達上限)`;
+            } else {
+                subsidyText += ` (${config.subsidyRate*100}%)`;
+            }
             
             // 效益計算
             let annualSaveVal = area * config.benefitFactor;
@@ -494,7 +503,7 @@
 
             // Update UI
             document.getElementById('val-total-cost').innerText = `NT$ ${totalCost.toLocaleString()}`;
-            document.getElementById('val-subsidy').innerText = `NT$ ${subsidy.toLocaleString()} (${config.subsidyRate*100}%)`;
+            document.getElementById('val-subsidy').innerText = subsidyText;
             document.getElementById('val-roi').innerText = `${roi} 年`;
             
             // Update Charts UI
