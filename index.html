@@ -319,7 +319,17 @@
                             </select>
                         </div>
 
-                        <!-- 2. 輸入面積 -->
+                        <!-- 2. 社區總戶數 (NEW) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">社區總戶數</label>
+                            <div class="relative">
+                                <input type="number" id="sim-households" value="200" oninput="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition font-mono text-lg text-right">
+                                <span class="absolute left-4 top-2.5 text-slate-400 text-sm"><i class="fa-solid fa-users"></i></span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1" id="household-type">中型社區 (補助上限20萬)</p>
+                        </div>
+
+                        <!-- 3. 輸入面積 -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">預計施作面積 (坪)</label>
                             <div class="relative">
@@ -328,7 +338,7 @@
                             </div>
                         </div>
 
-                        <!-- 3. 開關模擬 -->
+                        <!-- 4. 開關模擬 -->
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-slate-700">啟用模擬視圖</span>
                             <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
@@ -337,7 +347,7 @@
                             </div>
                         </div>
 
-                        <!-- 4. 即時經費試算 -->
+                        <!-- 5. 即時經費試算 -->
                         <div id="cost-preview" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm space-y-3 animate-pulse-fast" style="animation-iteration-count: 1;">
                             <div class="flex justify-between items-center">
                                 <span class="text-slate-500">預估總經費</span>
@@ -434,7 +444,7 @@
 
         const ELECTRICITY_RATE = 4.5; 
         const WATER_RATE = 12; // 水費假設
-        const MAX_SUBSIDY = 300000; // 大型社區補助上限 30 萬
+        // const MAX_SUBSIDY = 300000; // Removed constant, now dynamic
 
         // Feature 1: Map Analysis (Simplified for this demo)
         function startAnalysis() {
@@ -461,11 +471,28 @@
         // Feature 2: Simulation Logic
         function updateCalculations() {
             const area = parseInt(document.getElementById('sim-area').value) || 0;
+            const households = parseInt(document.getElementById('sim-households').value) || 0;
             const type = document.getElementById('sim-type').value;
             const isToggled = document.getElementById('sim-toggle').checked;
             const costPreview = document.getElementById('cost-preview');
             const generateBtn = document.getElementById('btn-generate');
+            const householdTypeLabel = document.getElementById('household-type');
             const config = COST_DB[type];
+
+            // Determine subsidy cap based on households
+            let maxSubsidy = 0;
+            let typeText = "";
+            if (households < 150) {
+                maxSubsidy = 100000;
+                typeText = "小型社區 (補助上限10萬)";
+            } else if (households < 300) {
+                maxSubsidy = 200000;
+                typeText = "中型社區 (補助上限20萬)";
+            } else {
+                maxSubsidy = 300000;
+                typeText = "大型社區 (補助上限30萬)";
+            }
+            householdTypeLabel.innerText = typeText;
 
             if (!isToggled) {
                 costPreview.classList.add('hidden');
@@ -482,9 +509,9 @@
             
             // 補助上限檢查
             let subsidyText = `NT$ ${subsidy.toLocaleString()}`;
-            if (subsidy > MAX_SUBSIDY) {
-                subsidy = MAX_SUBSIDY;
-                subsidyText = `NT$ ${subsidy.toLocaleString()} (已達上限)`;
+            if (subsidy > maxSubsidy) {
+                subsidy = maxSubsidy;
+                subsidyText = `NT$ ${subsidy.toLocaleString()} (達上限)`;
             } else {
                 subsidyText += ` (${config.subsidyRate*100}%)`;
             }
@@ -578,6 +605,7 @@
         function generateSubsidyDoc() {
             const address = document.getElementById('address-input').value;
             const area = document.getElementById('sim-area').value;
+            const households = document.getElementById('sim-households').value;
             const type = document.getElementById('sim-type').value;
             const config = COST_DB[type];
             
@@ -605,6 +633,7 @@
                             width: { size: 100, type: WidthType.PERCENTAGE },
                             rows: [
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區戶數", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(households + " 戶")], ...cellStyle }) ]}),
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(config.title)], ...cellStyle }) ]}),
                             ]
                         }),
