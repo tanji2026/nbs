@@ -252,9 +252,53 @@
     <!-- Interactive Demo 2: Simulator -->
     <section id="demo-sim" class="py-20 bg-slate-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row gap-12 items-start">
+            <!-- Flex Direction Changed: flex-col-reverse on mobile, md:flex-row on desktop -->
+            <!-- Note: Originally left was controls, right was visual. Now swapping. -->
+            <div class="flex flex-col-reverse md:flex-row gap-12 items-start">
                 
-                <!-- Left: Controls -->
+                <!-- Left: Visualizer (Formerly Right) -->
+                <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col h-full">
+                    <div class="h-80 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group shrink-0">
+                        <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
+                            <div class="text-center">
+                                <i class="fa-solid fa-layer-group text-6xl text-slate-600 mb-2"></i>
+                                <p class="text-slate-200 font-bold text-xl">原始現況</p>
+                            </div>
+                        </div>
+                        <div id="img-after" class="absolute inset-0 w-full h-full bg-emerald-600 flex items-center justify-center opacity-0 transition-opacity duration-700">
+                             <div class="text-center">
+                                <i class="fa-solid fa-seedling text-6xl text-white mb-2"></i>
+                                <p class="text-white font-bold text-xl" id="visual-label-after">模擬效果</p>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm backdrop-blur transition-colors duration-500" id="img-badge">
+                            <span id="img-label">原始現況</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
+                                <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-6">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
+                                <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-6">
+                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Controls (Formerly Left) -->
                 <div class="w-full md:w-1/3 space-y-8 sticky top-24">
                     <div>
                         <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
@@ -266,7 +310,7 @@
 
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
                         
-                        <!-- 1. 選擇改造項目 (NEW) -->
+                        <!-- 1. 選擇改造項目 -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">計畫改造項目</label>
                             <select id="sim-type" onchange="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
@@ -311,53 +355,12 @@
                         </div>
                     </div>
 
+                    <!-- Action Button (Kept in Controls) -->
                     <button id="btn-generate" onclick="generateSubsidyDoc()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i class="fa-solid fa-file-signature"></i>
                         一鍵生成改造補助計畫書
                     </button>
                     <p class="text-center text-xs text-slate-400 mt-2">* 自動填入新北市環保局格式表格</p>
-                </div>
-
-                <!-- Right: Visualizer -->
-                <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden">
-                    <div class="h-80 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group">
-                        <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
-                            <div class="text-center">
-                                <i class="fa-solid fa-layer-group text-6xl text-slate-600 mb-2"></i>
-                                <p class="text-slate-200 font-bold text-xl">原始現況</p>
-                            </div>
-                        </div>
-                        <div id="img-after" class="absolute inset-0 w-full h-full bg-emerald-600 flex items-center justify-center opacity-0 transition-opacity duration-700">
-                             <div class="text-center">
-                                <i class="fa-solid fa-seedling text-6xl text-white mb-2"></i>
-                                <p class="text-white font-bold text-xl" id="visual-label-after">模擬效果</p>
-                            </div>
-                        </div>
-                        <div class="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm backdrop-blur transition-colors duration-500" id="img-badge">
-                            <span id="img-label">原始現況</span>
-                        </div>
-                    </div>
-
-                    <div class="space-y-8">
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
-                                <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
-                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm" style="width: 95%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
-                                <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
-                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
