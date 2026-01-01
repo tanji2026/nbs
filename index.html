@@ -54,6 +54,7 @@
             background: linear-gradient(to bottom right, #f8fafc, #edf7f3);
             opacity: 1;
         }
+        /* Toggle Switch Styling */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #059669;
@@ -61,6 +62,7 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #059669;
         }
+        
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #059669;
@@ -81,6 +83,15 @@
             height: 100%;
             width: 100%;
             z-index: 1;
+        }
+        /* Leaflet Control Layer Fix */
+        .leaflet-control-layers {
+            border: none !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            padding: 8px !important;
         }
         
         /* Comparison Slider Styles */
@@ -114,7 +125,6 @@
             bottom: 0;
             left: 50%; /* Sync with scene-after width */
             width: 4px;
-            /* background: white;  Removed background line to avoid conflict */
             cursor: ew-resize;
             z-index: 30;
             display: flex;
@@ -509,114 +519,92 @@
     </footer>
 
     <script>
-        // --- Scenes Data (SVG Strings) ---
+        // --- Scenes Data (Polished SVGs) ---
         const SCENES = {
             rooftop: {
                 before: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="800" height="600" fill="#cbd5e1" />
-                        <rect x="0" y="300" width="800" height="300" fill="#e2e8f0" />
-                        <!-- Concrete Floor -->
-                        <path d="M0 600 L200 400 L600 400 L800 600 Z" fill="#94a3b8" />
-                        <!-- AC Units -->
-                        <rect x="100" y="350" width="80" height="60" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
-                        <circle cx="140" cy="380" r="20" fill="#94a3b8" opacity="0.5"/>
-                        <rect x="600" y="380" width="80" height="60" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
-                        <circle cx="640" cy="410" r="20" fill="#94a3b8" opacity="0.5"/>
-                        <!-- Sun & Heat -->
-                        <circle cx="400" cy="100" r="60" fill="#ef4444" opacity="0.8" />
-                        <path d="M200 350 Q220 300 200 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
-                        <path d="M400 350 Q420 300 400 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
-                        <path d="M600 350 Q620 300 600 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e2e8f0" /> <!-- Sky -->
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#94a3b8" /> <!-- Floor -->
+                        <rect x="100" y="300" width="100" height="100" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/> <!-- AC -->
+                        <circle cx="150" cy="350" r="30" fill="#94a3b8" opacity="0.5"/>
+                        <rect x="600" y="320" width="80" height="80" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/> <!-- AC -->
+                        <circle cx="640" cy="360" r="25" fill="#94a3b8" opacity="0.5"/>
+                        <circle cx="700" cy="80" r="50" fill="#ef4444" opacity="0.3" /> <!-- Sun -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle">高蓄熱水泥屋頂</text>
                     </svg>`,
                 after: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="800" height="600" fill="#e0f2fe" />
-                        <rect x="0" y="300" width="800" height="300" fill="#f0fdf4" />
-                        <!-- Green Roof -->
-                        <path d="M0 600 L200 400 L600 400 L800 600 Z" fill="#86efac" />
-                        <!-- Plants -->
-                        <circle cx="100" cy="500" r="30" fill="#16a34a" />
-                        <circle cx="150" cy="520" r="40" fill="#15803d" />
-                        <circle cx="700" cy="480" r="35" fill="#16a34a" />
-                        <circle cx="650" cy="510" r="45" fill="#15803d" />
-                        <!-- Solar Panels -->
-                        <path d="M250 350 L350 300 L550 300 L450 350 Z" fill="#1e293b" opacity="0.9"/>
-                        <rect x="260" y="350" width="10" height="50" fill="#64748b" />
-                        <rect x="440" y="350" width="10" height="50" fill="#64748b" />
-                        <!-- Sun -->
-                        <circle cx="700" cy="80" r="40" fill="#fcd34d" />
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" /> <!-- Blue Sky -->
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#86efac" /> <!-- Green Roof -->
+                        <path d="M50 450 Q100 400 150 450 T250 450" stroke="#16a34a" stroke-width="4" fill="none"/>
+                        <circle cx="100" cy="450" r="15" fill="#22c55e" />
+                        <circle cx="200" cy="480" r="20" fill="#15803d" />
+                        <rect x="300" y="300" width="200" height="10" fill="#1e293b" /> <!-- Solar Panel Top -->
+                        <rect x="350" y="310" width="10" height="90" fill="#475569" /> <!-- Leg -->
+                        <rect x="440" y="310" width="10" height="90" fill="#475569" /> <!-- Leg -->
+                        <circle cx="700" cy="80" r="50" fill="#fcd34d" /> <!-- Yellow Sun -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">綠屋頂 + 太陽能</text>
                     </svg>`
             },
             facade: {
                 before: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-                         <rect width="800" height="600" fill="#cbd5e1" />
-                         <!-- Building -->
-                         <rect x="200" y="100" width="400" height="500" fill="#94a3b8" />
-                         <!-- Windows -->
-                         <rect x="250" y="150" width="60" height="80" fill="#334155" />
-                         <rect x="370" y="150" width="60" height="80" fill="#334155" />
-                         <rect x="490" y="150" width="60" height="80" fill="#334155" />
-                         <rect x="250" y="300" width="60" height="80" fill="#334155" />
-                         <rect x="370" y="300" width="60" height="80" fill="#334155" />
-                         <rect x="490" y="300" width="60" height="80" fill="#334155" />
-                         <!-- Heat -->
-                         <rect x="0" y="0" width="800" height="600" fill="#ef4444" opacity="0.1"/>
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="200" y="50" width="400" height="550" fill="#94a3b8" />
+                        <rect x="250" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="250" y="300" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="300" width="80" height="100" fill="#475569" />
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#1e293b" text-anchor="middle">傳統建築立面</text>
                     </svg>`,
                 after: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-                         <rect width="800" height="600" fill="#e0f2fe" />
-                         <!-- Building -->
-                         <rect x="200" y="100" width="400" height="500" fill="#f8fafc" />
-                         <!-- Green Wall -->
-                         <rect x="220" y="120" width="360" height="460" fill="#4ade80" opacity="0.5"/>
-                         <!-- Vines -->
-                         <path d="M220 120 Q300 200 220 280 T220 440" stroke="#15803d" stroke-width="4" fill="none"/>
-                         <path d="M580 120 Q500 200 580 280 T580 440" stroke="#15803d" stroke-width="4" fill="none"/>
-                         <!-- Windows (Clear) -->
-                         <rect x="250" y="150" width="60" height="80" fill="#93c5fd" />
-                         <rect x="370" y="150" width="60" height="80" fill="#93c5fd" />
-                         <rect x="490" y="150" width="60" height="80" fill="#93c5fd" />
-                         <rect x="250" y="300" width="60" height="80" fill="#93c5fd" />
-                         <rect x="370" y="300" width="60" height="80" fill="#93c5fd" />
-                         <rect x="490" y="300" width="60" height="80" fill="#93c5fd" />
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="200" y="50" width="400" height="550" fill="#f1f5f9" />
+                        <!-- Green Walls -->
+                        <rect x="220" y="50" width="360" height="550" fill="#86efac" opacity="0.6"/>
+                        <path d="M220 50 Q240 150 220 250" stroke="#16a34a" stroke-width="5" fill="none"/>
+                        <path d="M580 50 Q560 150 580 250" stroke="#16a34a" stroke-width="5" fill="none"/>
+                        <!-- Windows -->
+                        <rect x="250" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="250" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">垂直綠化降溫</text>
                     </svg>`
             },
             ground: {
                 before: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
                         <rect width="800" height="600" fill="#cbd5e1" />
-                        <!-- Concrete Ground -->
                         <rect x="0" y="300" width="800" height="300" fill="#64748b" />
-                        <!-- Puddle -->
-                        <ellipse cx="400" cy="500" rx="150" ry="40" fill="#334155" opacity="0.8"/>
-                        <!-- Rain -->
-                        <line x1="200" y1="100" x2="180" y2="300" stroke="#94a3b8" stroke-width="2" />
-                        <line x1="400" y1="50" x2="380" y2="250" stroke="#94a3b8" stroke-width="2" />
-                        <line x1="600" y1="80" x2="580" y2="280" stroke="#94a3b8" stroke-width="2" />
+                        <ellipse cx="400" cy="500" rx="180" ry="60" fill="#475569" opacity="0.8"/> <!-- Puddle -->
+                        <line x1="200" y1="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="600" y1="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#e2e8f0" text-anchor="middle">不透水鋪面 (易積水)</text>
                     </svg>`,
                 after: `
-                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
                         <rect width="800" height="600" fill="#e0f2fe" />
-                        <!-- Permeable Pavement -->
                         <rect x="0" y="300" width="800" height="300" fill="#dcfce7" />
-                        <pattern id="pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <circle cx="2" cy="2" r="1" fill="#16a34a" />
-                        </pattern>
-                        <rect x="0" y="300" width="800" height="300" fill="url(#pattern)" opacity="0.3" />
-                        <!-- Trees -->
-                        <rect x="100" y="350" width="20" height="100" fill="#78350f" />
-                        <circle cx="110" cy="350" r="50" fill="#15803d" />
-                        <rect x="600" y="380" width="20" height="100" fill="#78350f" />
-                        <circle cx="610" cy="380" r="60" fill="#15803d" />
-                        <!-- Sun -->
-                        <circle cx="100" cy="80" r="40" fill="#fcd34d" />
+                        <!-- Grid Pattern for Permeable -->
+                        <defs>
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <rect width="38" height="38" fill="none" stroke="#86efac" stroke-width="2"/>
+                                <rect x="10" y="10" width="20" height="20" fill="#bbf7d0"/>
+                            </pattern>
+                        </defs>
+                        <rect x="0" y="300" width="800" height="300" fill="url(#grid)" />
+                        <circle cx="150" cy="350" r="80" fill="#15803d" /> <!-- Tree -->
+                        <rect x="140" y="430" width="20" height="100" fill="#78350f" />
+                        <circle cx="650" cy="380" r="60" fill="#16a34a" /> <!-- Bush -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">透水鋪面 + 雨水花園</text>
                     </svg>`
             }
         };
 
-        // ... (COST_DB, ELECTRICITY_RATE, WATER_RATE, MOCK_NTPC_ADDRESS_DB, Map Vars, Init Map, getMockTemp, startAnalysis - KEEP SAME) ...
+        // ... (Global Vars, Init Map, getMockTemp - Keep Same) ...
         const COST_DB = {
             "nbs": { 
                 title: "生物多樣性與綠化 (NbS)", 
@@ -687,11 +675,11 @@
                 zIndex: 500
             });
             
-            // Initialize Scene
+            // Init Scene
             renderScene();
         });
 
-        // ... (getMockTemp, startAnalysis function from V7.0 - KEEP SAME) ...
+        // ... (getMockTemp - KEEP SAME) ...
         function getMockTemp() {
             const now = new Date();
             const month = now.getMonth() + 1;
@@ -731,10 +719,8 @@
                 return;
             }
 
-            let queryAddress = userInput;
-            if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
-                queryAddress = "台灣新北市" + userInput;
-            }
+            // --- 修正: 強制台灣前綴 ---
+            let queryAddress = "台灣 " + userInput;
 
             btnText.innerText = '分析中...';
             btnLoader.classList.remove('hidden');
@@ -973,13 +959,13 @@
                 
                 clearInterval(autoPlayInterval);
                 autoPlayInterval = setInterval(() => {
-                    val += 1; // Slower speed for better view
+                    val += 1; 
                     if (val >= 100) {
                         val = 100;
                         clearInterval(autoPlayInterval);
-                        // Optional: Uncheck when done or loop? Let's stop at 100 for clarity
                     }
-                    updateSlider(val);
+                    slider.value = val; // 重要：更新 input 值
+                    updateSlider(val); // 更新視覺
                 }, 30); 
             } else {
                 clearInterval(autoPlayInterval);
