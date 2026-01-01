@@ -423,9 +423,6 @@
     </footer>
 
     <script>
-        // 設定 API Key (保留 Key，證明我們有權限)
-        const CWA_API_KEY = "CWA-F2B532A2-82DB-40C5-9B79-FB2CA3C0E69E";
-
         // --- 核心：項目參數設定 (3大重點項目) ---
         const COST_DB = {
             "nbs": { 
@@ -519,7 +516,31 @@
             }).addTo(map);
         });
 
-        // Feature 1: Map Analysis (Season-Adaptive Simulation)
+        // 輔助函式：取得 Mock 溫度 (當後端連線失敗時的備案)
+        function getMockTemp() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            let temp = 25;
+            let risk = "";
+            let color = "";
+
+            if (month >= 11 || month <= 2) {
+                temp = (Math.random() * (22 - 16) + 16).toFixed(1);
+                risk = "溫度偏低，適合評估建築保溫效益。";
+                color = "#3b82f6";
+            } else if (month >= 6 && month <= 9) {
+                temp = (Math.random() * (36 - 30) + 30).toFixed(1);
+                risk = "高於區域平均，屬熱島效應高風險區。";
+                color = "#ef4444";
+            } else {
+                temp = (Math.random() * (28 - 22) + 22).toFixed(1);
+                risk = "氣候宜人，建議進行綠化維護。";
+                color = "#22c55e";
+            }
+            return { temp, risk, color };
+        }
+
+        // Feature 1: Map Analysis (Backend API via Vercel)
         async function startAnalysis() {
             const btnText = document.getElementById('btn-text');
             const btnLoader = document.getElementById('btn-loader');
@@ -530,28 +551,25 @@
             
             const userInput = document.getElementById('address-input').value;
 
-            // 防呆檢查：如果未輸入地址則提示
+            // 防呆檢查
             if (!userInput) {
                 alert("請輸入地址以進行分析！");
                 return;
             }
 
-            // 1. UI 狀態更新：顯示「正在分析」
+            // 1. UI 狀態更新
             btnText.innerText = '分析中...';
             btnLoader.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             statusMsg.classList.remove('opacity-0');
             statusMsg.innerText = "正在連線 NTPC 新北市門牌位置 API...";
             
-            // 亮起燈號
             ntpcDot.classList.add('animate-ping', 'bg-brand-green');
-            cwaDot.classList.add('bg-slate-500'); // Reset weather dot
+            cwaDot.classList.add('bg-slate-500');
 
-            // 2. 模擬 API 網路延遲 (1.5秒)，增加真實感
-            setTimeout(() => {
-                
-                // 3. 模擬地址解析 (NTPC Geocoding)
-                // 判斷使用者輸入了哪個區，決定座標
+            // 2. 模擬地址解析延遲
+            setTimeout(async () => {
+                // Mock 地址解析
                 let locationData = MOCK_NTPC_ADDRESS_DB["default"];
                 for (const key in MOCK_NTPC_ADDRESS_DB) {
                     if (userInput.includes(key)) {
@@ -560,91 +578,92 @@
                     }
                 }
                 
-                // 切換狀態文字，假裝正在查氣象
-                statusMsg.innerText = `已定位：${locationData.name} (${locationData.lat}, ${locationData.lng})... 讀取氣象中...`;
+                statusMsg.innerText = `已定位：${locationData.name}... 讀取氣象中...`;
                 ntpcDot.classList.remove('animate-ping');
                 ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping', 'bg-brand-green');
 
-                setTimeout(() => {
-                    // 4. 智慧季節判斷 (解決 "冬天怎麼可能32度" 的問題)
-                    const now = new Date();
-                    const month = now.getMonth() + 1; // 1-12月
+                // 3. 嘗試讀取真實氣象 (改用 Vercel 後端 Proxy)
+                let weatherData = null;
+                try {
+                    // ▼▼▼ 請將下方網址換成您剛剛在 Vercel 複製的網址 ▼▼▼
+                    // 例如: const backendUrl = 'https://tanji-backend.vercel.app/api/weather';
+                    const backendUrl = 'https://tanji-backend-d66y.vercel.app/api/weather'; 
                     
-                    let simulatedTemp = 0;
-                    let riskText = "";
-                    let circleColor = "";
+                    if (backendUrl.includes('YOUR_VERCEL_DOMAIN')) {
+                         console.warn("Vercel domain not set. Using mock data fallback.");
+                         throw new Error("Vercel Domain Placeholder Detected");
+                    }
+
+                    // 直接呼叫後端，不需要再傳 API Key
+                    const response = await fetch(backendUrl);
                     
-                    // 根據當前月份給予合理的溫度範圍
-                    if (month >= 11 || month <= 2) {
-                        // 冬天 (11, 12, 1, 2月): 溫度約 16-22度
-                        simulatedTemp = (Math.random() * (22 - 16) + 16).toFixed(1);
-                        riskText = "溫度偏低，適合評估建築保溫效益。";
-                        circleColor = "#3b82f6"; // 藍色 (冷)
-                    } else if (month >= 6 && month <= 9) {
-                        // 夏天 (6, 7, 8, 9月): 溫度約 30-36度
-                        simulatedTemp = (Math.random() * (36 - 30) + 30).toFixed(1);
-                        riskText = "高於區域平均，屬熱島效應高風險區。";
-                        circleColor = "#ef4444"; // 紅色 (熱)
+                    if (!response.ok) throw new Error("Backend connection failed");
+
+                    const data = await response.json();
+                    
+                    // 簡單解析邏輯 (假設回傳 CWA 格式)
+                    if (data.records && data.records.Station && data.records.Station.length > 0) {
+                        const station = data.records.Station[0];
+                        weatherData = {
+                            temp: station.WeatherElement.AirTemperature,
+                            risk: "即時數據來源：中央氣象署 (CWA)",
+                            color: station.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
+                            source: "Real API via Vercel"
+                        };
                     } else {
-                        // 春秋 (3, 4, 5, 10月): 溫度約 22-28度
-                        simulatedTemp = (Math.random() * (28 - 22) + 22).toFixed(1);
-                        riskText = "氣候宜人，建議進行綠化維護。";
-                        circleColor = "#22c55e"; // 綠色 (舒適)
+                        throw new Error("No data found");
                     }
+                } catch (apiError) {
+                    console.warn("Backend API failed, switching to Mock data:", apiError);
+                    // 備案：如果 Vercel 還沒設好或掛了，自動切換回 Mock 模式
+                    const mock = getMockTemp();
+                    weatherData = {
+                        temp: mock.temp,
+                        risk: mock.risk + " (模擬數據)",
+                        color: mock.color,
+                        source: "Mock Data (Fallback)"
+                    };
+                }
 
-                    // 格式化時間：取當下的小時
-                    const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
-                    
-                    // 5. 更新 UI 顯示結果
-                    btnText.innerText = '重新分析';
-                    btnLoader.classList.add('hidden');
-                    cwaDot.classList.remove('animate-ping');
-                    cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                    
-                    resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                    
-                    // 6. 更新地圖：飛到該地點並畫圈
-                    if(map) {
-                        // 強制重繪地圖 (解決 display:hidden 導致地圖大小錯誤的問題)
-                        map.invalidateSize();
-                        // 移動視角
-                        map.flyTo([locationData.lat, locationData.lng], 15);
-                        
-                        // 清除舊圈圈
-                        if(heatCircle) map.removeLayer(heatCircle);
-                        
-                        // 畫新圈圈 (模擬熱島範圍)
-                        heatCircle = L.circle([locationData.lat, locationData.lng], {
-                            color: circleColor,
-                            fillColor: circleColor,
-                            fillOpacity: 0.4,
-                            radius: 300 // 300公尺範圍
-                        }).addTo(map);
-                        
-                        // 加入標記
-                        L.marker([locationData.lat, locationData.lng])
-                            .addTo(map)
-                            .bindPopup(`<b>${locationData.name}</b><br>模擬氣溫: ${simulatedTemp}°C`)
-                            .openPopup();
-                    }
+                // 4. 更新 UI 顯示結果
+                const now = new Date();
+                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-                    // 誠實標示資料來源狀態
-                    statusMsg.innerText = "AI 運算完成！數據來源：新北市政府 & 中央氣象署 (模擬)";
-                    
-                    document.getElementById('result-temp-desc').innerHTML = 
-                        `目前${locationData.name}氣溫 <span class="text-2xl font-bold text-white">${simulatedTemp}°C</span> (觀測時間: ${obsTime})<br>${riskText}`;
-                    
-                    // 顯示技術除錯資訊，證明我們解析的是 JSON 結構
-                    document.getElementById('api-debug-info').innerText = `API: NTPC Addr (d7b568ab) OK | CWA Weather OK`;
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                cwaDot.classList.remove('animate-ping');
+                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                
+                if(map) {
+                    map.invalidateSize();
+                    map.flyTo([locationData.lat, locationData.lng], 15);
+                    if(heatCircle) map.removeLayer(heatCircle);
+                    heatCircle = L.circle([locationData.lat, locationData.lng], {
+                        color: weatherData.color,
+                        fillColor: weatherData.color,
+                        fillOpacity: 0.4,
+                        radius: 300 
+                    }).addTo(map);
+                    L.marker([locationData.lat, locationData.lng])
+                        .addTo(map)
+                        .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
+                        .openPopup();
+                }
 
-                    // 自動填入搜尋的地址到申請書欄位
-                    if(userInput) {
-                        document.getElementById('sim-address').value = userInput;
-                    }
-                }, 800); // 第二段延遲 (氣象)
+                statusMsg.innerText = "分析完成！";
+                document.getElementById('result-temp-desc').innerHTML = 
+                    `目前${locationData.name}氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span> (觀測時間: ${obsTime})<br>${weatherData.risk}`;
+                
+                document.getElementById('api-debug-info').innerText = `Source: ${weatherData.source} | Loc: ${locationData.name}`;
 
-            }, 1000); // 第一段延遲 (地址)
+                if(userInput) {
+                    document.getElementById('sim-address').value = userInput;
+                }
+
+            }, 800); 
         }
 
         // Feature 2: Simulation Logic
