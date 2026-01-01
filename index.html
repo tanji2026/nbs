@@ -586,8 +586,7 @@
                 // 3. 嘗試讀取真實氣象 (改用 Vercel 後端 Proxy)
                 let weatherData = null;
                 try {
-                    // ▼▼▼ 請將下方網址換成您剛剛在 Vercel 複製的網址 ▼▼▼
-                    // 例如: const backendUrl = 'https://tanji-backend.vercel.app/api/weather';
+                    // 填入您的 Vercel 網址 (已自動帶入)
                     const backendUrl = 'https://tanji-backend-d66y.vercel.app/api/weather'; 
                     
                     if (backendUrl.includes('YOUR_VERCEL_DOMAIN')) {
@@ -602,12 +601,25 @@
 
                     const data = await response.json();
                     
-                    // 簡單解析邏輯 (假設回傳 CWA 格式)
-                    if (data.records && data.records.Station && data.records.Station.length > 0) {
-                        const station = data.records.Station[0];
+                    // 智慧搜尋邏輯：尋找名稱相符的測站
+                    if (data.records && data.records.Station) {
+                        // 1. 處理地名：把 "板橋區" 變成 "板橋"，增加對比成功率
+                        const searchKey = locationData.name.replace('區', ''); 
+                        
+                        // 2. 在所有測站中搜尋名字包含 "板橋" 的站
+                        let station = data.records.Station.find(s => s.StationName.includes(searchKey));
+
+                        // 3. 如果找不到 (例如 "北大特區" 可能沒有測站)，就找最近的一個 (或是預設回傳第一個)
+                        if (!station) {
+                            console.warn(`找不到 ${searchKey} 測站，使用最近/預設測站`);
+                            station = data.records.Station[0]; // Fallback
+                        }
+
+                        // 4. 顯示資料
                         weatherData = {
                             temp: station.WeatherElement.AirTemperature,
-                            risk: "即時數據來源：中央氣象署 (CWA)",
+                            // 顯示它抓到哪個測站，讓你確認
+                            risk: `即時數據：CWA ${station.StationName} 測站`, 
                             color: station.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
                             source: "Real API via Vercel"
                         };
