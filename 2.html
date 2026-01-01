@@ -16,6 +16,10 @@
     <!-- docx.js & FileSaver.js -->
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
         tailwind.config = {
@@ -34,6 +38,15 @@
                     },
                     animation: {
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
                     }
                 }
             }
@@ -47,12 +60,10 @@
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .hero-pattern {
-            background-color: #f8fafc;
-            background-image: radial-gradient(#059669 0.5px, transparent 0.5px), radial-gradient(#059669 0.5px, #f8fafc 0.5px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            opacity: 0.5;
+            background: linear-gradient(to bottom right, #f8fafc, #edf7f3);
+            opacity: 1;
         }
+        /* Toggle Switch Styling */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #059669;
@@ -60,6 +71,7 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #059669;
         }
+        
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #059669;
@@ -73,7 +85,108 @@
             100% { transform: rotate(360deg); }
         }
         .bar-transition {
-            transition: width 1s ease-in-out, background-color 0.5s;
+            transition: width 0.3s ease-out, background-color 0.5s;
+        }
+        /* Map Container Fix */
+        #risk-map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+        /* Leaflet Control Layer Fix */
+        .leaflet-control-layers {
+            border: none !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            padding: 8px !important;
+        }
+        
+        /* Comparison Slider Styles */
+        .comparison-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f1f5f9;
+        }
+        .scene-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .scene-before {
+            z-index: 1;
+        }
+        .scene-after {
+            z-index: 2;
+            width: 50%; /* Default starting width */
+            border-right: 3px solid white;
+            background-color: #f1f5f9; /* Avoid transparency showing before layer */
+        }
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%; /* Sync with scene-after width */
+            width: 4px;
+            cursor: ew-resize;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; /* Let clicks pass through to input */
+        }
+        .slider-circle {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #059669;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            pointer-events: auto; /* Enable pointer events on handle */
+            border: 2px solid #059669;
+        }
+        /* Range input to control the slider */
+        #comparison-range {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: ew-resize;
+            z-index: 40; /* Top most for interaction */
+            margin: 0;
+        }
+        
+        /* SVG Styles */
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Selection Card Styles */
+        .select-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .select-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .select-card.active {
+            border-color: #059669;
+            background-color: #ecfdf5;
         }
     </style>
 </head>
@@ -120,7 +233,7 @@
             </div>
             
             <!-- Platform Concept Explainer -->
-            <div class="mt-16 relative mx-auto max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden bg-white">
+            <div id="features" class="mt-16 relative mx-auto max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden bg-white">
                 <div class="bg-gradient-to-r from-slate-50 to-white p-8 md:p-12">
                     <div class="flex flex-col md:flex-row items-center justify-between gap-8">
                         <div class="w-full md:w-1/2 text-left space-y-6">
@@ -180,7 +293,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="新北市三峽區學勤路1號 (北大特區)" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址...">
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址...">
                     </div>
                     <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
@@ -190,10 +303,13 @@
                 
                 <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署 API
+                        <div id="status-dot-ntpc" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：OpenStreetMap 定位服務
                     </div>
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 災害潛勢地圖 API
+                        <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
+                    </div>
+                    <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
+                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 淹水潛勢圖
                     </div>
                 </div>
                 
@@ -203,17 +319,13 @@
 
                 <div id="analysis-result" class="hidden transition-all duration-500 opacity-0 transform translate-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 flex items-center justify-center">
-                            <div class="absolute inset-0 bg-slate-700">
-                                <div class="w-full h-full opacity-30" style="background-image: repeating-linear-gradient(45deg, #475569 0, #475569 1px, transparent 0, transparent 50%); background-size: 10px 10px;"></div>
-                            </div>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <i class="fa-solid fa-map-location-dot text-6xl text-slate-600"></i>
-                            </div>
-                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-red-500 rounded-full filter blur-2xl opacity-40"></div>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-10">
-                                    <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="map-alert-text">熱島效應熱點</span>
+                        <!-- 真實互動地圖區塊 -->
+                        <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 shadow-inner">
+                            <div id="risk-map"></div>
+                            <!-- 覆蓋在地圖上的浮動標籤 -->
+                            <div class="absolute bottom-2 right-2 z-[999]">
+                                <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
+                                    <i class="fa-solid fa-layer-group mr-1"></i>OSM + NCDR
                                 </span>
                             </div>
                         </div>
@@ -232,11 +344,10 @@
                                 <div>
                                     <h4 class="font-bold text-blue-200" id="result-flood-title">排水負荷警示</h4>
                                     <p class="text-sm text-slate-300 mt-1" id="result-flood-desc">短延時強降雨發生機率高，建議提升社區透水率。</p>
-                                    <a href="https://data.wra.gov.tw/OpenData/InundationProbabilityMaps/207-03.7z" class="text-xs text-blue-300 hover:text-white underline mt-2 block" target="_blank"><i class="fa-solid fa-download mr-1"></i>下載新北市淹水潛勢圖 (政府公開資料)</a>
                                 </div>
                             </div>
                             <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
-                                <p class="font-bold text-white"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 模擬器改善</p>
+                                <p class="font-bold text-white"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 選物店改善</p>
                             </div>
                         </div>
                     </div>
@@ -247,27 +358,44 @@
 
     <!-- Interactive Demo 2: Simulator -->
     <section id="demo-sim" class="py-20 bg-slate-50">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- 修正寬度為 max-w-7xl，解決版面不對稱問題 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
-            <div class="flex flex-col-reverse md:flex-row gap-12 items-start">
+            <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
                 
-                <!-- Left: Visualizer -->
-                <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col h-full">
-                    <div class="h-80 rounded-xl bg-slate-200 mb-8 overflow-hidden relative group shrink-0">
-                        <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
-                            <div class="text-center">
-                                <i class="fa-solid fa-layer-group text-6xl text-slate-600 mb-2"></i>
-                                <p class="text-slate-200 font-bold text-xl">原始現況</p>
+                <!-- Left: Visualizer (Modified: Clean Layout & Slider) -->
+                <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
+                    <!-- Comparison Slider Container -->
+                    <div class="comparison-container h-[500px] rounded-xl mb-8 relative border border-slate-200 group">
+                        
+                        <!-- SCENE BEFORE (Bottom Layer) -->
+                        <div class="scene-layer scene-before bg-slate-100" id="scene-before-container">
+                             <!-- Dynamic SVG content will be injected here -->
+                        </div>
+
+                        <!-- SCENE AFTER (Top Layer, Width Controlled by JS) -->
+                        <div id="scene-after" class="scene-layer scene-after bg-emerald-50">
+                            <div id="scene-after-container" class="w-full h-full">
+                                <!-- Dynamic SVG content will be injected here -->
                             </div>
                         </div>
-                        <div id="img-after" class="absolute inset-0 w-full h-full bg-emerald-600 flex items-center justify-center opacity-0 transition-opacity duration-700">
-                             <div class="text-center">
-                                <i class="fa-solid fa-seedling text-6xl text-white mb-2"></i>
-                                <p class="text-white font-bold text-xl" id="visual-label-after">模擬效果</p>
+
+                        <!-- Slider Controls -->
+                        <div id="slider-handle" class="slider-handle">
+                            <div class="slider-circle">
+                                <i class="fa-solid fa-arrows-left-right"></i>
                             </div>
                         </div>
-                        <div class="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm backdrop-blur transition-colors duration-500" id="img-badge">
-                            <span id="img-label">原始現況</span>
+                        
+                        <!-- Invisible Range Input for Interaction -->
+                        <input type="range" min="0" max="100" value="50" id="comparison-range" oninput="updateSlider(this.value)">
+
+                        <!-- Badges -->
+                        <div class="absolute bottom-4 left-4 z-20 bg-white/90 text-slate-600 px-3 py-1 rounded text-xs font-bold shadow-sm border border-slate-200">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1"></i>改造前
+                        </div>
+                        <div class="absolute bottom-4 right-4 z-20 bg-brand-green/90 text-white px-3 py-1 rounded text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-check-circle mr-1"></i>改造後
                         </div>
                     </div>
 
@@ -277,8 +405,10 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
                                 <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
-                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm" style="width: 95%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm relative transition-all duration-75" style="width: 95%">
+                                    <div class="absolute inset-0 bg-white/20 rounded-full"></div>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -286,20 +416,20 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
                                 <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
-                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm transition-all duration-75" style="width: 2%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right: Controls & Generation -->
-                <div class="w-full md:w-1/3 space-y-8 sticky top-24">
+                <div class="w-full md:w-1/3 space-y-8">
                     <div>
                         <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
-                        <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 效益模擬器</h2>
+                        <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 選物店</h2>
                         <p class="text-slate-600 mt-4" id="sim-desc">
-                            選擇適合的氣候韌性方案，系統將自動模擬降溫與減碳效益，並試算政府補助金額。
+                            從下方「選物區」挑選適合的解決方案，即時預覽氣候調適效益。
                         </p>
                     </div>
 
@@ -316,14 +446,58 @@
                             <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
                         </div>
 
-                        <!-- 1. 選擇改造項目 -->
+                        <!-- 施作位置選擇 -->
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">計畫改造項目</label>
-                            <select id="sim-type" onchange="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
-                                <option value="nbs">1. 生物多樣性與綠化 (NbS)</option>
-                                <option value="water">2. 水資源再利用 (雨水/透水)</option>
-                                <option value="insulation">3. 建築外殼節能 (隔熱)</option>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">施作位置 (切換場景)</label>
+                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
+                                <option value="rooftop">頂樓 (屋頂層)</option>
+                                <option value="facade">建築外牆 (立面)</option>
+                                <option value="ground">一樓中庭/開放空間</option>
                             </select>
+                        </div>
+
+                        <!-- 1. 選物店卡片 (REPLACED DROPDOWN) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-store text-brand-green mr-1"></i> 選物區：改造方案</label>
+                            <div class="grid grid-cols-1 gap-3" id="selection-shop-cards">
+                                <!-- NbS Card -->
+                                <div class="select-card active bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('nbs', this)">
+                                    <div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-green flex-shrink-0">
+                                        <i class="fa-solid fa-seedling"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">生物多樣性 (NbS)</div>
+                                        <div class="text-xs text-slate-500">綠屋頂、生態跳島</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+
+                                <!-- Water Card -->
+                                <div class="select-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('water', this)">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                        <i class="fa-solid fa-faucet-drip"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">水資源再利用</div>
+                                        <div class="text-xs text-slate-500">雨水貯留、透水磚</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+
+                                <!-- Insulation Card -->
+                                <div class="select-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('insulation', this)">
+                                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 flex-shrink-0">
+                                        <i class="fa-solid fa-sun"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">建築外殼節能</div>
+                                        <div class="text-xs text-slate-500">隔熱漆、隔熱磚</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+                            </div>
+                            <!-- Hidden input to store value -->
+                            <input type="hidden" id="sim-type" value="nbs">
                         </div>
 
                         <!-- 2. 社區總戶數 -->
@@ -345,11 +519,11 @@
                             </div>
                         </div>
 
-                        <!-- 4. 開關模擬 -->
+                        <!-- 4. 開關模擬 (改為自動演示按鈕) -->
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-700">啟用模擬視圖</span>
+                             <span class="font-bold text-slate-700">自動演示效果</span>
                             <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 top-[-4px] left-[-4px]" onchange="toggleSimulation()"/>
+                                <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 top-[-4px] left-[-4px]" onchange="toggleAutoPlay()"/>
                                 <label for="sim-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
                             </div>
                         </div>
@@ -383,7 +557,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white py-12">
+    <footer id="impact" class="bg-slate-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-6 md:mb-0">
@@ -403,10 +577,92 @@
     </footer>
 
     <script>
-        // 設定 API Key
-        const CWA_API_KEY = "CWA-F2B532A2-82DB-40C5-9B79-FB2CA3C0E69E";
-        
-        // --- 核心：項目參數設定 (3大重點項目) ---
+        // --- Scenes Data (Polished SVGs) ---
+        const SCENES = {
+            rooftop: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e2e8f0" /> <!-- Sky -->
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#94a3b8" /> <!-- Floor -->
+                        <rect x="100" y="300" width="100" height="100" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/> <!-- AC -->
+                        <circle cx="150" cy="350" r="30" fill="#94a3b8" opacity="0.5"/>
+                        <rect x="600" y="320" width="80" height="80" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/> <!-- AC -->
+                        <circle cx="640" cy="360" r="25" fill="#94a3b8" opacity="0.5"/>
+                        <circle cx="700" cy="80" r="50" fill="#ef4444" opacity="0.3" /> <!-- Sun -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle">高蓄熱水泥屋頂</text>
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" /> <!-- Blue Sky -->
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#86efac" /> <!-- Green Roof -->
+                        <path d="M50 450 Q100 400 150 450 T250 450" stroke="#16a34a" stroke-width="4" fill="none"/>
+                        <circle cx="100" cy="450" r="15" fill="#22c55e" />
+                        <circle cx="200" cy="480" r="20" fill="#15803d" />
+                        <rect x="300" y="300" width="200" height="10" fill="#1e293b" /> <!-- Solar Panel Top -->
+                        <rect x="350" y="310" width="10" height="90" fill="#475569" /> <!-- Leg -->
+                        <rect x="440" y="310" width="10" height="90" fill="#475569" /> <!-- Leg -->
+                        <circle cx="700" cy="80" r="50" fill="#fcd34d" /> <!-- Yellow Sun -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">綠屋頂 + 太陽能</text>
+                    </svg>`
+            },
+            facade: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="200" y="50" width="400" height="550" fill="#94a3b8" />
+                        <rect x="250" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="250" y="300" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="300" width="80" height="100" fill="#475569" />
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#1e293b" text-anchor="middle">傳統建築立面</text>
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="200" y="50" width="400" height="550" fill="#f1f5f9" />
+                        <!-- Green Walls -->
+                        <rect x="220" y="50" width="360" height="550" fill="#86efac" opacity="0.6"/>
+                        <path d="M220 50 Q240 150 220 250" stroke="#16a34a" stroke-width="5" fill="none"/>
+                        <path d="M580 50 Q560 150 580 250" stroke="#16a34a" stroke-width="5" fill="none"/>
+                        <!-- Windows -->
+                        <rect x="250" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="250" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">垂直綠化降溫</text>
+                    </svg>`
+            },
+            ground: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="0" y="300" width="800" height="300" fill="#64748b" />
+                        <ellipse cx="400" cy="500" rx="180" ry="60" fill="#475569" opacity="0.8"/> <!-- Puddle -->
+                        <line x1="200" y1="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="600" y1="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#e2e8f0" text-anchor="middle">不透水鋪面 (易積水)</text>
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="0" y="300" width="800" height="300" fill="#dcfce7" />
+                        <!-- Grid Pattern for Permeable -->
+                        <defs>
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <rect width="38" height="38" fill="none" stroke="#86efac" stroke-width="2"/>
+                                <rect x="10" y="10" width="20" height="20" fill="#bbf7d0"/>
+                            </pattern>
+                        </defs>
+                        <rect x="0" y="300" width="800" height="300" fill="url(#grid)" />
+                        <circle cx="150" cy="350" r="80" fill="#15803d" /> <!-- Tree -->
+                        <rect x="140" y="430" width="20" height="100" fill="#78350f" />
+                        <circle cx="650" cy="380" r="60" fill="#16a34a" /> <!-- Bush -->
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle">透水鋪面 + 雨水花園</text>
+                    </svg>`
+            }
+        };
+
+        // ... (Global Vars, Init Map, getMockTemp - Keep Same) ...
         const COST_DB = {
             "nbs": { 
                 title: "生物多樣性與綠化 (NbS)", 
@@ -414,10 +670,10 @@
                 subsidyRate: 0.5, 
                 desc: "建置薄層綠屋頂與生態跳島，種植原生耐旱植栽。", 
                 benefitUnit: "度電 (空調節能)",
-                benefitFactor: 60, // 每坪省電度數
+                benefitFactor: 60, 
                 visualText: "導入綠屋頂後",
                 chart1Title: "頂樓夏季表面溫度",
-                chart1Base: 55, chart1Improv: 32 // 改善後溫度
+                chart1Base: 55, chart1Improv: 32
             },
             "water": { 
                 title: "水資源再利用 (雨水/透水)", 
@@ -425,10 +681,10 @@
                 subsidyRate: 0.5, 
                 desc: "設置雨水貯留桶與透水鋪面，打造雨水花園。", 
                 benefitUnit: "度水 (節省自來水)",
-                benefitFactor: 30, // 每坪省水量(噸)
+                benefitFactor: 30, 
                 visualText: "導入雨水回收後",
                 chart1Title: "暴雨逕流削減率",
-                chart1Base: 0, chart1Improv: 85 // 削減 85%
+                chart1Base: 0, chart1Improv: 85
             },
             "insulation": { 
                 title: "建築外殼節能 (隔熱)", 
@@ -444,230 +700,368 @@
         };
 
         const ELECTRICITY_RATE = 4.5; 
-        const WATER_RATE = 12; // 水費假設
+        const WATER_RATE = 12; 
 
-        // Feature 1: Map Analysis (With Real API)
+        // Global Map Variable
+        let map = null;
+        let heatCircle = null;
+        let ncdrLayer = null; 
+        let osmLayer = null;  
+        let ncdrEmapLayer = null; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            map = L.map('risk-map').setView([25.012, 121.465], 11);
+            
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OSM contributors'
+            });
+            osmLayer.addTo(map);
+
+            ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
+                maxZoom: 20,
+                maxNativeZoom: 12, 
+                opacity: 0.8, 
+                attribution: 'NCDR 淹水潛勢圖',
+                zIndex: 1000 
+            });
+
+            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
+                maxZoom: 20,
+                maxNativeZoom: 15,
+                opacity: 1.0, 
+                attribution: 'NCDR 電子地圖',
+                zIndex: 500
+            });
+            
+            // Init Scene
+            renderScene();
+            // Init Selection Shop UI State (Default Select first one)
+            const firstCard = document.querySelector('.select-card');
+            if(firstCard) selectSolution('nbs', firstCard);
+        });
+
+        // ... (getMockTemp - KEEP SAME) ...
+        function getMockTemp() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            let temp = 25;
+            let risk = "";
+            let color = "";
+
+            if (month >= 11 || month <= 2) {
+                temp = (Math.random() * (22 - 16) + 16).toFixed(1);
+                risk = "溫度偏低，適合評估建築保溫效益。";
+                color = "#3b82f6";
+            } else if (month >= 6 && month <= 9) {
+                temp = (Math.random() * (36 - 30) + 30).toFixed(1);
+                risk = "高於區域平均，屬熱島效應高風險區。";
+                color = "#ef4444";
+            } else {
+                temp = (Math.random() * (28 - 22) + 22).toFixed(1);
+                risk = "氣候宜人，建議進行綠化維護。";
+                color = "#22c55e";
+            }
+            return { temp, risk, color };
+        }
+
         async function startAnalysis() {
             const btnText = document.getElementById('btn-text');
             const btnLoader = document.getElementById('btn-loader');
             const resultDiv = document.getElementById('analysis-result');
             const statusMsg = document.getElementById('status-message');
             const cwaDot = document.getElementById('status-dot-cwa');
+            const ntpcDot = document.getElementById('status-dot-ntpc'); 
+            const ncdrDot = document.getElementById('status-dot-ncdr'); 
             
+            let userInput = document.getElementById('address-input').value;
+
+            if (!userInput) {
+                alert("請輸入地址以進行分析！");
+                return;
+            }
+
+            // --- 修正: 強制台灣前綴 ---
+            let queryAddress = "台灣 " + userInput;
+
             btnText.innerText = '分析中...';
             btnLoader.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             statusMsg.classList.remove('opacity-0');
-            statusMsg.innerText = "正在連線 CWA 中央氣象署 API...";
-            cwaDot.classList.add('animate-ping', 'bg-brand-green');
+            statusMsg.innerText = "正在連線 GIS 定位伺服器...";
+            
+            ntpcDot.classList.remove('bg-brand-green', 'animate-ping');
+            cwaDot.classList.remove('bg-brand-green', 'animate-ping');
+            ncdrDot.classList.remove('bg-brand-green', 'animate-ping');
+            ntpcDot.classList.add('bg-slate-500');
+            cwaDot.classList.add('bg-slate-500');
+            ncdrDot.classList.add('bg-slate-500');
+
+            ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
+            ntpcDot.classList.add('animate-ping');
 
             try {
-                // 呼叫真實 API
-                const realData = await fetchRealWeatherData();
+                const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
+                let geoData = null;
+                let locationName = userInput;
+
+                try {
+                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
+                    if (geoRes.ok) {
+                        geoData = await geoRes.json();
+                        locationName = geoData.name;
+                    } else {
+                        throw new Error("Backend geocode failed");
+                    }
+                } catch (backendErr) {
+                    console.warn("後端定位失敗，嘗試前端直連 OSM...", backendErr);
+                    const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryAddress)}&format=json&limit=1`);
+                    if (osmRes.ok) {
+                        const osmRaw = await osmRes.json();
+                        if (osmRaw && osmRaw.length > 0) {
+                            geoData = { lat: parseFloat(osmRaw[0].lat), lng: parseFloat(osmRaw[0].lon), name: osmRaw[0].display_name };
+                            locationName = geoData.name;
+                        }
+                    }
+                }
+
+                if (!geoData) throw new Error("地址定位失敗");
+                if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
+                    statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
+                }
+
+                const locationData = { lat: geoData.lat, lng: geoData.lng, name: locationName };
+                ntpcDot.classList.remove('animate-ping'); 
                 
-                // 顯示結果
-                statusMsg.innerText = "AI 運算完成！數據來源：中央氣象署";
+                statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象中...`;
+                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                cwaDot.classList.add('animate-ping');
+
+                const weatherRes = await fetch(`${backendUrl}/api/weather`);
+                if (!weatherRes.ok) throw new Error("氣象連線失敗");
+                const weatherRaw = await weatherRes.json();
+                
+                let weatherData = null;
+                if (weatherRaw.records && weatherRaw.records.Station) {
+                    let minDist = Infinity;
+                    let nearestStation = weatherRaw.records.Station[0];
+                    weatherRaw.records.Station.forEach(s => {
+                        const dist = Math.sqrt(Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2));
+                        if (dist < minDist) { minDist = dist; nearestStation = s; }
+                    });
+                    weatherData = {
+                        temp: nearestStation.WeatherElement.AirTemperature,
+                        risk: `觀測站：${nearestStation.StationName} (距離 ${(minDist*111).toFixed(1)}km)`,
+                        color: nearestStation.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
+                        source: "Real API"
+                    };
+                }
+
+                cwaDot.classList.remove('animate-ping');
+                statusMsg.innerText = "正在載入 NCDR 災害圖資...";
+                ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                ncdrDot.classList.add('animate-ping');
+                await new Promise(r => setTimeout(r, 800));
+
+                const now = new Date();
+                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
-                cwaDot.classList.remove('animate-ping');
-                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                
+                ncdrDot.classList.remove('animate-ping');
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 
-                // 更新畫面數值
-                if (realData) {
-                    document.getElementById('result-temp-desc').innerHTML = 
-                        `目前板橋測站氣溫 <span class="text-2xl font-bold text-white">${realData.temp}°C</span> (觀測時間: ${realData.time})<br>高於區域平均，屬熱島效應高風險區。`;
-                    document.getElementById('api-debug-info').innerText = `API Status: Success (200) | Station: ${realData.station}`;
-                } else {
-                    document.getElementById('result-temp-desc').innerText = "連線逾時，顯示歷史平均數據：38.2°C";
-                    document.getElementById('api-debug-info').innerText = "API Status: Failed (Using Fallback)";
+                if(map) {
+                    map.invalidateSize();
+                    map.flyTo([locationData.lat, locationData.lng], 15); 
+                    if(heatCircle) map.removeLayer(heatCircle);
+                    heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
+                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
+                    if(ncdrEmapLayer && ncdrLayer) {
+                        ncdrEmapLayer.addTo(map);
+                        setTimeout(() => { map.removeLayer(ncdrEmapLayer); ncdrLayer.addTo(map); }, 3000);
+                    }
                 }
 
-                // 自動填入搜尋的地址到申請書欄位
-                const searchedAddress = document.getElementById('address-input').value;
-                if(searchedAddress) {
-                    document.getElementById('sim-address').value = searchedAddress;
-                }
-
-            } catch (error) {
-                console.error("Analysis failed", error);
-                statusMsg.innerText = "連線不穩定，切換至離線資料庫";
-                // Fallback UI code here...
+                statusMsg.innerText = "分析完成！圖層已疊加";
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
+                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
+                document.getElementById('result-flood-desc').innerText = `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
+                if(userInput) { document.getElementById('sim-address').value = userInput; }
+            } catch (e) {
+                console.error(e);
+                alert("連線異常或無法定位，切換至備援模式。");
+                const mock = getMockTemp();
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                statusMsg.innerText = "分析完成 (模擬數據模式)";
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
+                document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
             }
         }
 
-        // 真實 API 串接函式
-        async function fetchRealWeatherData() {
-            // 使用局屬氣象站-現在天氣觀測報告 (O-A0003-001)
-            // 板橋站 StationId: 466880
-            const stationId = '466880'; 
-            const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${CWA_API_KEY}&format=JSON&StationId=${stationId}`;
-
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                const stationData = data.records.Station[0];
-                
-                // 取得氣溫 (AirTemperature) 與 觀測時間 (ObsTime)
-                const temp = stationData.WeatherElement.AirTemperature;
-                const obsTime = new Date(stationData.ObsTime.DateTime).getHours() + ":00";
-                
-                return {
-                    temp: temp,
-                    time: obsTime,
-                    station: stationData.StationName
-                };
-            } catch (error) {
-                console.warn("API Fetch Error:", error);
-                return null;
+        // --- NEW: Render Scene Logic ---
+        function renderScene() {
+            const loc = document.getElementById('sim-location').value || 'rooftop';
+            const sceneData = SCENES[loc];
+            if(sceneData) {
+                document.getElementById('scene-before-container').innerHTML = sceneData.before;
+                document.getElementById('scene-after-container').innerHTML = sceneData.after;
             }
         }
 
-        // Feature 2: Simulation Logic
-        function updateCalculations() {
+        // New Selection Logic
+        function selectSolution(type, cardElement) {
+            // Update hidden input
+            document.getElementById('sim-type').value = type;
+            
+            // UI Update
+            document.querySelectorAll('.select-card').forEach(el => {
+                el.classList.remove('active', 'bg-emerald-50', 'border-brand-green');
+                el.classList.add('bg-slate-50', 'border-slate-200');
+                el.querySelector('.check-icon').classList.add('opacity-0');
+            });
+            
+            cardElement.classList.remove('bg-slate-50', 'border-slate-200');
+            cardElement.classList.add('active', 'bg-emerald-50', 'border-brand-green');
+            cardElement.querySelector('.check-icon').classList.remove('opacity-0');
+
+            // Trigger calc
+            updateCalculations();
+        }
+
+        // New Slider Logic
+        function updateSlider(val) {
+            document.getElementById('scene-after').style.width = val + '%';
+            document.getElementById('slider-handle').style.left = val + '%';
+            updateCalculations(val);
+        }
+
+        // Feature 2: Simulation Logic (Updated for Slider)
+        function updateCalculations(sliderVal = 0) {
+            const isToggled = document.getElementById('sim-toggle').checked;
+            let progress = 0;
+            
+            if (typeof sliderVal === 'number' || typeof sliderVal === 'string') {
+                 progress = parseInt(sliderVal) / 100;
+                 if(progress > 0.9) document.getElementById('sim-toggle').checked = true;
+                 if(progress < 0.1) document.getElementById('sim-toggle').checked = false;
+            } else {
+                 progress = isToggled ? 1 : 0;
+                 // Update slider visually if toggled via checkbox/auto
+                 document.getElementById('comparison-range').value = progress * 100;
+                 document.getElementById('scene-after').style.width = (progress * 100) + '%';
+                 document.getElementById('slider-handle').style.left = (progress * 100) + '%';
+            }
+
             const area = parseInt(document.getElementById('sim-area').value) || 0;
             const households = parseInt(document.getElementById('sim-households').value) || 0;
             const type = document.getElementById('sim-type').value;
-            const isToggled = document.getElementById('sim-toggle').checked;
-            const costPreview = document.getElementById('cost-preview');
-            const generateBtn = document.getElementById('btn-generate');
-            const householdTypeLabel = document.getElementById('household-type');
             const config = COST_DB[type];
 
-            // Determine subsidy cap based on households
-            let maxSubsidy = 0;
-            let typeText = "";
-            if (households < 150) {
-                maxSubsidy = 100000;
-                typeText = "小型社區 (補助上限10萬)";
-            } else if (households < 300) {
-                maxSubsidy = 200000;
-                typeText = "中型社區 (補助上限20萬)";
+            // Subsidy Logic
+            let maxSubsidy = 300000;
+            if (households < 150) maxSubsidy = 100000;
+            else if (households < 300) maxSubsidy = 200000;
+
+            const costPreview = document.getElementById('cost-preview');
+            const generateBtn = document.getElementById('btn-generate');
+
+            if (progress > 0.1) {
+                costPreview.classList.remove('hidden');
+                generateBtn.disabled = false;
             } else {
-                maxSubsidy = 300000;
-                typeText = "大型社區 (補助上限30萬)";
-            }
-            householdTypeLabel.innerText = typeText;
-
-            if (!isToggled) {
-                costPreview.classList.add('hidden');
-                generateBtn.disabled = true;
-                return;
+                 if(progress === 0) {
+                    costPreview.classList.add('hidden');
+                    generateBtn.disabled = true;
+                 }
             }
 
-            costPreview.classList.remove('hidden');
-            generateBtn.disabled = false;
-
-            // 經費計算
+            // Calculation
             const totalCost = area * config.cost;
             let subsidy = Math.floor(totalCost * config.subsidyRate);
-            
-            // 補助上限檢查
-            let subsidyText = `NT$ ${subsidy.toLocaleString()}`;
-            if (subsidy > maxSubsidy) {
-                subsidy = maxSubsidy;
-                subsidyText = `NT$ ${subsidy.toLocaleString()} (達上限)`;
-            } else {
-                subsidyText += ` (${config.subsidyRate*100}%)`;
-            }
-            
-            // 效益計算
+            if (subsidy > maxSubsidy) subsidy = maxSubsidy;
+
             let annualSaveVal = area * config.benefitFactor;
-            let annualMoneySave = 0;
-            if(type === 'water') {
-                annualMoneySave = annualSaveVal * WATER_RATE;
-            } else {
-                annualMoneySave = annualSaveVal * ELECTRICITY_RATE;
-            }
-            
-            // ROI
+            let annualMoneySave = (type === 'water') ? annualSaveVal * WATER_RATE : annualSaveVal * ELECTRICITY_RATE;
             const roi = annualMoneySave > 0 ? ((totalCost - subsidy) / annualMoneySave).toFixed(1) : "N/A";
 
-            // Update UI
             document.getElementById('val-total-cost').innerText = `NT$ ${totalCost.toLocaleString()}`;
-            document.getElementById('val-subsidy').innerText = subsidyText;
+            document.getElementById('val-subsidy').innerText = `NT$ ${subsidy.toLocaleString()}`;
             document.getElementById('val-roi').innerText = `${roi} 年`;
-            
-            // Update Charts UI
-            updateCharts(config, isToggled, annualSaveVal);
-        }
 
-        function updateCharts(config, isToggled, annualBenefit) {
-            const labelAfter = document.getElementById('visual-label-after');
+            const chartBase = config.chart1Base;
+            const chartImprov = config.chart1Improv;
+            const currentTemp = (chartBase - ((chartBase - chartImprov) * progress)).toFixed(1);
+            
             const barTemp = document.getElementById('bar-temp');
             const valTemp = document.getElementById('val-temp');
+            
+            const tempPercent = (currentTemp / 60) * 100; 
+            barTemp.style.width = `${tempPercent}%`;
+            valTemp.innerText = `${currentTemp}${config.chart1Title.includes("率")?"%":"°C"}`;
+            
+            if(progress > 0.5) {
+                barTemp.classList.remove('bg-red-500');
+                barTemp.classList.add('bg-brand-green');
+                valTemp.classList.remove('text-red-500');
+                valTemp.classList.add('text-brand-green');
+            } else {
+                barTemp.classList.add('bg-red-500');
+                barTemp.classList.remove('bg-brand-green');
+                valTemp.classList.add('text-red-500');
+                valTemp.classList.remove('text-brand-green');
+            }
+
             const barCarbon = document.getElementById('bar-carbon');
             const valCarbon = document.getElementById('val-carbon');
-            const title1 = document.getElementById('chart-title-1');
-            const title2 = document.getElementById('chart-title-2');
-
-            // Set dynamic titles
-            title1.innerHTML = `<i class="fa-solid fa-chart-line mr-2"></i>${config.chart1Title}`;
-            labelAfter.innerText = config.visualText;
-
-            if (isToggled) {
-                // Temp/Performance Chart
-                let widthPercent = 50; 
-                if(config.chart1Base > 0) {
-                    widthPercent = (config.chart1Improv / config.chart1Base) * 100;
-                } else { // Special case for water (0 to 85%)
-                    widthPercent = config.chart1Improv; 
-                }
-                
-                barTemp.style.width = `${widthPercent}%`;
-                barTemp.classList.replace('bg-red-500', 'bg-brand-green');
-                
-                let unit = (config.chart1Title.includes("溫度")) ? "°C" : "%";
-                valTemp.innerText = `${config.chart1Improv}${unit}`;
-                valTemp.classList.replace('text-red-500', 'text-brand-green');
-
-                // Benefit Chart
-                barCarbon.style.width = '80%';
+            
+            const currentBenefit = Math.floor(annualSaveVal * progress);
+            barCarbon.style.width = `${10 + (progress * 80)}%`; 
+            valCarbon.innerText = `${currentBenefit.toLocaleString()} ${config.benefitUnit}`;
+            
+            if(progress > 0.1) {
                 barCarbon.classList.remove('bg-slate-300');
                 barCarbon.classList.add('bg-brand-green');
-                valCarbon.innerText = `${annualBenefit.toLocaleString()} ${config.benefitUnit}`;
-                valCarbon.classList.add('text-brand-green');
+            } else {
+                barCarbon.classList.add('bg-slate-300');
+                barCarbon.classList.remove('bg-brand-green');
             }
         }
 
-        function toggleSimulation() {
-            const isChecked = document.getElementById('sim-toggle').checked;
-            const imgAfter = document.getElementById('img-after');
-            const imgBadge = document.getElementById('img-badge');
+        // Auto Play Animation Fix
+        let autoPlayInterval;
+        function toggleAutoPlay() {
+            const checkbox = document.getElementById('sim-toggle');
+            const slider = document.getElementById('comparison-range');
             
-            if (isChecked) {
-                imgAfter.classList.remove('opacity-0');
-                imgBadge.classList.replace('bg-black/60', 'bg-brand-green/90');
-                document.getElementById('img-label').innerText = '模擬效果';
+            if (checkbox.checked) {
+                let val = parseInt(slider.value);
+                if(val >= 100) val = 0; 
+                
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = setInterval(() => {
+                    val += 1; 
+                    if (val >= 100) {
+                        val = 100;
+                        clearInterval(autoPlayInterval);
+                    }
+                    slider.value = val; // 重要：更新 input 值
+                    updateSlider(val); // 更新視覺
+                }, 30); 
             } else {
-                imgAfter.classList.add('opacity-0');
-                imgBadge.classList.replace('bg-brand-green/90', 'bg-black/60');
-                document.getElementById('img-label').innerText = '原始現況';
-                
-                // Reset Charts visual only (logic handled in updateCalculations)
-                document.getElementById('bar-temp').style.width = '95%';
-                document.getElementById('bar-temp').classList.replace('bg-brand-green', 'bg-red-500');
-                document.getElementById('val-temp').classList.replace('text-brand-green', 'text-red-500');
-                
-                document.getElementById('bar-carbon').style.width = '2%';
-                document.getElementById('bar-carbon').classList.remove('bg-brand-green');
-                document.getElementById('bar-carbon').classList.add('bg-slate-300');
+                clearInterval(autoPlayInterval);
             }
-            updateCalculations();
         }
 
         // Feature 3: Generate Document
         function generateSubsidyDoc() {
-            // Get user input for Org Name and Address
             const orgName = document.getElementById('sim-org-name').value || "申請單位未填寫";
             const address = document.getElementById('sim-address').value || "地址未填寫";
-            
             const area = document.getElementById('sim-area').value;
             const households = document.getElementById('sim-households').value;
             const type = document.getElementById('sim-type').value;
+            const locationSelect = document.getElementById('sim-location');
+            const locationText = locationSelect.options[locationSelect.selectedIndex].text;
             const config = COST_DB[type];
             
             const totalCostStr = document.getElementById('val-total-cost').innerText;
@@ -696,11 +1090,11 @@
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(orgName)], ...cellStyle }) ]}),
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區地址", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
                                 new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區戶數", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(households + " 戶")], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(config.title)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(`${config.title} - ${locationText}`)], ...cellStyle }) ]}),
                             ]
                         }),
                         new Paragraph({ text: "\n一、改善方式與現況", heading: docx.HeadingLevel.HEADING_2 }),
-                        new Paragraph({ text: `${config.desc} 預計施作面積 ${area} 坪。` }),
+                        new Paragraph({ text: `${config.desc} 預計施作位置為 ${locationText}，面積約 ${area} 坪。` }),
                         new Paragraph({ text: "\n二、經費與效益", heading: docx.HeadingLevel.HEADING_2 }),
                         new Table({
                             width: { size: 100, type: WidthType.PERCENTAGE },
