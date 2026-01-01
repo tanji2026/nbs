@@ -85,6 +85,15 @@
             width: 100%;
             z-index: 1;
         }
+        /* Leaflet Control Layer Fix */
+        .leaflet-control-layers {
+            border: none !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            padding: 8px !important;
+        }
     </style>
 </head>
 <body class="font-sans text-slate-800 antialiased bg-slate-50">
@@ -504,23 +513,44 @@
         let map = null;
         let heatCircle = null;
         let ncdrLayer = null; // 新增：NCDR 圖層變數
+        let osmLayer = null;  // 底圖變數
+        let ncdrEmapLayer = null; // 測試用：電子地圖
 
         // Initialize Map
         document.addEventListener('DOMContentLoaded', () => {
             map = L.map('risk-map').setView([25.012, 121.465], 11);
             
             // 1. 底圖 (OpenStreetMap)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OSM contributors'
-            }).addTo(map);
+            });
+            osmLayer.addTo(map);
 
             // 2. 新增：NCDR 淹水潛勢圖 (WMTS 服務 - WRA_FLOOD_600)
-            // 改用 600mm 淹水潛勢圖 (XYZ Tiles 格式) - 視覺效果更明顯 (紅/藍/黃色塊)
+            // 關鍵修正：加入 maxNativeZoom: 12，防止縮放過近導致圖片消失
             ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}', {
                 maxZoom: 20,
-                opacity: 0.6, // 設定半透明以便看到底圖街道
-                attribution: 'NCDR 淹水潛勢圖'
+                maxNativeZoom: 12, // ⭐️ 重要：若伺服器沒高清圖，自動放大低清圖，確保不消失
+                opacity: 0.7, 
+                attribution: 'NCDR 淹水潛勢圖',
+                zIndex: 1000 // 強制置頂
             });
+
+            // 3. 新增：NCDR 通用電子地圖 (測試用 - 不透明)
+            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+                maxZoom: 20,
+                maxNativeZoom: 15,
+                opacity: 1.0, 
+                attribution: 'NCDR 電子地圖',
+                zIndex: 500
+            });
+
+            // 4. 加入圖層控制器 (讓使用者可以手動開關)
+            const overlayMaps = {
+                "🔴 NCDR 淹水潛勢圖 (600mm)": ncdrLayer,
+                "🗺️ NCDR 通用電子地圖 (測試連線)": ncdrEmapLayer
+            };
+            L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
         });
 
         // 輔助函式：取得 Mock 溫度 (當後端連線失敗時的備案)
@@ -565,31 +595,36 @@
             }
 
             // --- 修正 1：防止定位到中國 ---
-            // 如果輸入中不包含「台灣」或「新北市」，則自動補上，限定搜尋範圍
             if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
                 // 為了 API 搜尋精準，我們在變數裡加，但不要改掉使用者看到的 input
-                // 這裡使用一個新的變數 queryAddress 來傳給後端
             }
-            // 由於 nominatim 搜尋邏輯，直接串接字串最快：
             const queryAddress = "台灣新北市" + userInput;
 
-            // 1. UI 狀態更新
+            // 1. UI 狀態更新 (重置所有燈號為灰色)
             btnText.innerText = '分析中...';
             btnLoader.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             statusMsg.classList.remove('opacity-0');
             statusMsg.innerText = "正在連線 GIS 定位伺服器...";
             
-            ntpcDot.classList.add('animate-ping', 'bg-brand-green');
+            // 重置燈號：全灰
+            ntpcDot.classList.remove('bg-brand-green', 'animate-ping');
+            cwaDot.classList.remove('bg-brand-green', 'animate-ping');
+            ncdrDot.classList.remove('bg-brand-green', 'animate-ping');
+            
+            ntpcDot.classList.add('bg-slate-500');
             cwaDot.classList.add('bg-slate-500');
-            ncdrDot.classList.add('bg-slate-500'); // Reset NCDR dot
+            ncdrDot.classList.add('bg-slate-500');
+
+            // 步驟 A 開始：定位燈號閃爍
+            ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
+            ntpcDot.classList.add('animate-ping');
 
             try {
                 // 您的 Vercel 網址
                 const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
 
                 // --- 步驟 A: 真實地址定位 (呼叫 Vercel /api/geocode) ---
-                // 使用修正後的 queryAddress 進行搜尋
                 const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
                 if (!geoRes.ok) throw new Error("地址定位失敗");
                 
@@ -597,13 +632,15 @@
                 const locationData = {
                     lat: geoData.lat,
                     lng: geoData.lng,
-                    name: userInput // 顯示時還是用使用者原本輸入的名稱
+                    name: userInput 
                 };
 
+                // 定位完成：定位燈號恆亮，氣象燈號閃爍
+                ntpcDot.classList.remove('animate-ping'); // 停止定位閃爍
+                
                 statusMsg.innerText = `已定位：${geoData.name.substring(0, 15)}... 讀取氣象中...`;
-                ntpcDot.classList.remove('animate-ping');
-                ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                cwaDot.classList.add('animate-ping', 'bg-brand-green');
+                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                cwaDot.classList.add('animate-ping');
 
                 // --- 步驟 B: 真實氣象資料 ---
                 const weatherRes = await fetch(`${backendUrl}/api/weather`);
@@ -635,6 +672,16 @@
                     };
                 }
 
+                // 氣象完成：氣象燈號恆亮，NCDR 燈號閃爍
+                cwaDot.classList.remove('animate-ping');
+                
+                statusMsg.innerText = "正在載入 NCDR 災害圖資...";
+                ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                ncdrDot.classList.add('animate-ping');
+
+                // 故意延遲一點點，讓使用者看到 NCDR 燈號在跑 (增加真實感)
+                await new Promise(r => setTimeout(r, 800));
+
                 // 4. 更新 UI
                 const now = new Date();
                 const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -642,19 +689,15 @@
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
                 
-                // 停止 CWA 燈號動畫並亮綠燈
-                cwaDot.classList.remove('animate-ping');
-                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                
-                // --- 修正 3：啟動 NCDR 燈號 ---
-                ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                // 全部完成：停止 NCDR 閃爍
+                ncdrDot.classList.remove('animate-ping');
 
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 
                 // 5. 更新地圖與 NCDR 圖層
                 if(map) {
                     map.invalidateSize();
-                    map.flyTo([locationData.lat, locationData.lng], 15); // Zoom level 15 適合看街道淹水
+                    map.flyTo([locationData.lat, locationData.lng], 15); 
                     
                     if(heatCircle) map.removeLayer(heatCircle);
                     heatCircle = L.circle([locationData.lat, locationData.lng], {
@@ -669,19 +712,18 @@
                         .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
                         .openPopup();
 
-                    // ★★★ 修正 2：開啟淹水潛勢圖層 (疊圖效果) ★★★
+                    // ★★★ 關鍵：確保圖層被加入 ★★★
                     if(ncdrLayer) {
-                        ncdrLayer.addTo(map); // 把圖層疊上去
+                        ncdrLayer.addTo(map); 
                     }
                 }
 
-                statusMsg.innerText = "分析完成！已載入 NCDR 淹水潛勢圖層";
+                statusMsg.innerText = "分析完成！圖層已疊加";
                 document.getElementById('result-temp-desc').innerHTML = 
                     `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
                 
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
 
-                // 更新淹水警示文字
                 document.getElementById('result-flood-desc').innerText = 
                     `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
 
@@ -694,7 +736,6 @@
                 alert("連線異常或無法定位，切換至備援模式。");
                 // 失敗時切換回 Mock 模式
                 const mock = getMockTemp();
-                // 簡單 Mock 定位 fallback
                 let locationData = MOCK_NTPC_ADDRESS_DB["default"];
                 for (const key in MOCK_NTPC_ADDRESS_DB) {
                     if (userInput.includes(key)) {
@@ -703,7 +744,6 @@
                     }
                 }
                 
-                // 更新 UI (Fallback)
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
