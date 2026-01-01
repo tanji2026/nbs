@@ -595,10 +595,11 @@
                 return;
             }
 
-            // --- 修正 1：強制台灣前綴，防止定位到日本板橋 ---
-            // 只有當輸入不包含「台灣」時才加，避免重複
+            // --- 修正 1：防止定位到中國 ---
+            // 如果輸入中不包含「台灣」或「新北市」，則自動補上，限定搜尋範圍
+            // 這裡使用一個新的變數 queryAddress 來傳給後端
             let queryAddress = userInput;
-            if (!userInput.includes("台灣")) {
+            if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
                 queryAddress = "台灣 " + userInput;
             }
 
@@ -626,29 +627,55 @@
                 // 您的 Vercel 網址
                 const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
 
-                // --- 步驟 A: 真實地址定位 (呼叫 Vercel /api/geocode) ---
-                const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
-                if (!geoRes.ok) throw new Error("地址定位失敗");
-                
-                const geoData = await geoRes.json();
+                // --- 步驟 A: 真實地址定位 (雙重備援機制) ---
+                let geoData = null;
+                let locationName = userInput;
+
+                try {
+                    // 方法 1: 呼叫 Vercel 後端 API
+                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
+                    if (geoRes.ok) {
+                        geoData = await geoRes.json();
+                        locationName = geoData.name;
+                    } else {
+                        throw new Error("Backend geocode failed (404/500)");
+                    }
+                } catch (backendErr) {
+                    console.warn("後端定位失敗，嘗試前端直連 OSM Nominatim...", backendErr);
+                    // 方法 2: 前端直接呼叫 OpenStreetMap (備用)
+                    const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryAddress)}&format=json&limit=1`);
+                    if (osmRes.ok) {
+                        const osmRaw = await osmRes.json();
+                        if (osmRaw && osmRaw.length > 0) {
+                            geoData = {
+                                lat: parseFloat(osmRaw[0].lat),
+                                lng: parseFloat(osmRaw[0].lon),
+                                name: osmRaw[0].display_name
+                            };
+                            locationName = geoData.name;
+                        }
+                    }
+                }
+
+                // 檢查是否成功取得座標
+                if (!geoData) throw new Error("地址定位失敗 (所有途徑皆無效)");
                 
                 // 座標柵欄檢查 (Geofence Check)：如果在台灣範圍外，視為失敗
                 if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
                     console.warn("定位到台灣以外區域，嘗試強制修正...");
-                    // 這裡可以做二次嘗試，或者直接報錯。為了演示，我們顯示警示
                     statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
                 }
 
                 const locationData = {
                     lat: geoData.lat,
                     lng: geoData.lng,
-                    name: geoData.name // 使用 API 回傳的完整地址名稱
+                    name: locationName
                 };
 
                 // 定位完成：定位燈號恆亮，氣象燈號閃爍
                 ntpcDot.classList.remove('animate-ping'); // 停止定位閃爍
                 
-                statusMsg.innerText = `已定位：${geoData.name.substring(0, 15)}... 讀取氣象中...`;
+                statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象中...`;
                 cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping');
 
