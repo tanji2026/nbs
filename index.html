@@ -200,7 +200,7 @@
                 
                 <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div id="status-dot-ntpc" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：新北市門牌位置資料庫
+                        <div id="status-dot-ntpc" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：OpenStreetMap 定位服務
                     </div>
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
                         <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
@@ -222,7 +222,7 @@
                             <!-- 覆蓋在地圖上的浮動標籤 -->
                             <div class="absolute bottom-2 right-2 z-[999]">
                                 <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
-                                    <i class="fa-solid fa-layer-group mr-1"></i>OpenStreetMap
+                                    <i class="fa-solid fa-layer-group mr-1"></i>OSM + NCDR
                                 </span>
                             </div>
                         </div>
@@ -423,7 +423,7 @@
     </footer>
 
     <script>
-        // --- 核心：項目參數設定 (3大重點項目) ---
+        // --- 核心：項目參數設定 ---
         const COST_DB = {
             "nbs": { 
                 title: "生物多樣性與綠化 (NbS)", 
@@ -464,8 +464,7 @@
         const WATER_RATE = 12; // 水費假設
 
         /*
-         * 新北市門牌位置資料庫 - 模擬資料
-         * 包含新北市 29 個行政區座標
+         * 新北市門牌位置資料庫 - 模擬資料 (Fallback 用)
          */
         const MOCK_NTPC_ADDRESS_DB = {
             "板橋": { lat: 25.014, lng: 121.463, name: "板橋區" },
@@ -504,16 +503,26 @@
         // Global Map Variable
         let map = null;
         let heatCircle = null;
+        let ncdrLayer = null; // 新增：NCDR 圖層變數
 
         // Initialize Map
         document.addEventListener('DOMContentLoaded', () => {
-            // 初始化地圖，預設顯示新北市
             map = L.map('risk-map').setView([25.012, 121.465], 11);
             
-            // 使用 OpenStreetMap 圖資
+            // 1. 底圖 (OpenStreetMap)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution: '&copy; OSM contributors'
             }).addTo(map);
+
+            // 2. 新增：NCDR 淹水潛勢圖 (WMS 服務)
+            // 使用 NCDR 的通用電子地圖層，作為政府圖資示範
+            ncdrLayer = L.tileLayer.wms('https://wmts.ncdr.nat.gov.tw/wmts', {
+                layers: 'EMAP5_OPENDATA', // 通用電子地圖，可替換為其他 NCDR 開放圖層
+                format: 'image/png',
+                transparent: true,
+                opacity: 0.5,
+                attribution: 'NCDR'
+            });
         });
 
         // 輔助函式：取得 Mock 溫度 (當後端連線失敗時的備案)
@@ -540,18 +549,17 @@
             return { temp, risk, color };
         }
 
-        // Feature 1: Map Analysis (Backend API via Vercel)
+        // Feature 1: Map Analysis (Full Real GIS)
         async function startAnalysis() {
             const btnText = document.getElementById('btn-text');
             const btnLoader = document.getElementById('btn-loader');
             const resultDiv = document.getElementById('analysis-result');
             const statusMsg = document.getElementById('status-message');
             const cwaDot = document.getElementById('status-dot-cwa');
-            const ntpcDot = document.getElementById('status-dot-ntpc');
+            const ntpcDot = document.getElementById('status-dot-ntpc'); // 這裡代表定位服務
             
             const userInput = document.getElementById('address-input').value;
 
-            // 防呆檢查
             if (!userInput) {
                 alert("請輸入地址以進行分析！");
                 return;
@@ -562,14 +570,115 @@
             btnLoader.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             statusMsg.classList.remove('opacity-0');
-            statusMsg.innerText = "正在連線 NTPC 新北市門牌位置 API...";
+            statusMsg.innerText = "正在連線 GIS 定位伺服器...";
             
             ntpcDot.classList.add('animate-ping', 'bg-brand-green');
             cwaDot.classList.add('bg-slate-500');
 
-            // 2. 模擬地址解析延遲
-            setTimeout(async () => {
-                // Mock 地址解析
+            try {
+                // 您的 Vercel 網址
+                const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
+
+                // --- 步驟 A: 真實地址定位 (呼叫 Vercel /api/geocode) ---
+                const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(userInput)}`);
+                if (!geoRes.ok) throw new Error("地址定位失敗");
+                
+                const geoData = await geoRes.json();
+                const locationData = {
+                    lat: geoData.lat,
+                    lng: geoData.lng,
+                    name: userInput // 使用者輸入的原始名稱
+                };
+
+                statusMsg.innerText = `已定位：${geoData.name.substring(0, 15)}... 讀取氣象中...`;
+                ntpcDot.classList.remove('animate-ping');
+                ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                cwaDot.classList.add('animate-ping', 'bg-brand-green');
+
+                // --- 步驟 B: 真實氣象資料 ---
+                const weatherRes = await fetch(`${backendUrl}/api/weather`);
+                if (!weatherRes.ok) throw new Error("氣象連線失敗");
+                const weatherRaw = await weatherRes.json();
+                
+                let weatherData = null;
+                if (weatherRaw.records && weatherRaw.records.Station) {
+                    // 智慧搜尋：直接找離「定位座標」最近的測站
+                    let minDist = Infinity;
+                    let nearestStation = weatherRaw.records.Station[0];
+
+                    weatherRaw.records.Station.forEach(s => {
+                        const dist = Math.sqrt(
+                            Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + 
+                            Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2)
+                        );
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestStation = s;
+                        }
+                    });
+
+                    weatherData = {
+                        temp: nearestStation.WeatherElement.AirTemperature,
+                        risk: `觀測站：${nearestStation.StationName} (距離 ${(minDist*111).toFixed(1)}km)`,
+                        color: nearestStation.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
+                        source: "Real API"
+                    };
+                }
+
+                // 4. 更新 UI
+                const now = new Date();
+                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                cwaDot.classList.remove('animate-ping');
+                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                
+                // 5. 更新地圖與 NCDR 圖層
+                if(map) {
+                    map.invalidateSize();
+                    map.flyTo([locationData.lat, locationData.lng], 16); // 飛近一點
+                    
+                    if(heatCircle) map.removeLayer(heatCircle);
+                    heatCircle = L.circle([locationData.lat, locationData.lng], {
+                        color: weatherData.color,
+                        fillColor: weatherData.color,
+                        fillOpacity: 0.4,
+                        radius: 150 
+                    }).addTo(map);
+                    
+                    L.marker([locationData.lat, locationData.lng])
+                        .addTo(map)
+                        .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
+                        .openPopup();
+
+                    // ★★★ 關鍵：開啟淹水潛勢圖層 ★★★
+                    if(ncdrLayer) {
+                        ncdrLayer.addTo(map); // 把圖層疊上去
+                    }
+                }
+
+                statusMsg.innerText = "分析完成！已載入 NCDR 淹水潛勢圖層";
+                document.getElementById('result-temp-desc').innerHTML = 
+                    `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
+                
+                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
+
+                // 更新淹水警示文字
+                document.getElementById('result-flood-desc').innerText = 
+                    `已套疊 NCDR 淹水潛勢圖。該區域透水率低，建議優先評估基地保水方案。`;
+
+                if(userInput) {
+                    document.getElementById('sim-address').value = userInput;
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("連線異常或無法定位，切換至備援模式。");
+                // 失敗時切換回 Mock 模式
+                const mock = getMockTemp();
+                // 簡單 Mock 定位 fallback
                 let locationData = MOCK_NTPC_ADDRESS_DB["default"];
                 for (const key in MOCK_NTPC_ADDRESS_DB) {
                     if (userInput.includes(key)) {
@@ -578,104 +687,21 @@
                     }
                 }
                 
-                statusMsg.innerText = `已定位：${locationData.name}... 讀取氣象中...`;
-                ntpcDot.classList.remove('animate-ping');
-                ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                cwaDot.classList.add('animate-ping', 'bg-brand-green');
-
-                // 3. 嘗試讀取真實氣象 (改用 Vercel 後端 Proxy)
-                let weatherData = null;
-                try {
-                    // 填入您的 Vercel 網址 (已自動帶入)
-                    const backendUrl = 'https://tanji-backend-d66y.vercel.app/api/weather'; 
-                    
-                    if (backendUrl.includes('YOUR_VERCEL_DOMAIN')) {
-                         console.warn("Vercel domain not set. Using mock data fallback.");
-                         throw new Error("Vercel Domain Placeholder Detected");
-                    }
-
-                    // 直接呼叫後端，不需要再傳 API Key
-                    const response = await fetch(backendUrl);
-                    
-                    if (!response.ok) throw new Error("Backend connection failed");
-
-                    const data = await response.json();
-                    
-                    // 智慧搜尋邏輯：尋找名稱相符的測站
-                    if (data.records && data.records.Station) {
-                        // 1. 處理地名：把 "板橋區" 變成 "板橋"，增加對比成功率
-                        const searchKey = locationData.name.replace('區', ''); 
-                        
-                        // 2. 在所有測站中搜尋名字包含 "板橋" 的站
-                        let station = data.records.Station.find(s => s.StationName.includes(searchKey));
-
-                        // 3. 如果找不到 (例如 "北大特區" 可能沒有測站)，就找最近的一個 (或是預設回傳第一個)
-                        if (!station) {
-                            console.warn(`找不到 ${searchKey} 測站，使用最近/預設測站`);
-                            station = data.records.Station[0]; // Fallback
-                        }
-
-                        // 4. 顯示資料
-                        weatherData = {
-                            temp: station.WeatherElement.AirTemperature,
-                            // 顯示它抓到哪個測站，讓你確認
-                            risk: `即時數據：CWA ${station.StationName} 測站`, 
-                            color: station.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
-                            source: "Real API via Vercel"
-                        };
-                    } else {
-                        throw new Error("No data found");
-                    }
-                } catch (apiError) {
-                    console.warn("Backend API failed, switching to Mock data:", apiError);
-                    // 備案：如果 Vercel 還沒設好或掛了，自動切換回 Mock 模式
-                    const mock = getMockTemp();
-                    weatherData = {
-                        temp: mock.temp,
-                        risk: mock.risk + " (模擬數據)",
-                        color: mock.color,
-                        source: "Mock Data (Fallback)"
-                    };
-                }
-
-                // 4. 更新 UI 顯示結果
-                const now = new Date();
-                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
-
+                // 更新 UI (Fallback)
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
-                cwaDot.classList.remove('animate-ping');
-                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
-                
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                statusMsg.innerText = "分析完成 (模擬數據模式)";
+                
+                document.getElementById('result-temp-desc').innerHTML = 
+                    `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
+                document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
                 if(map) {
-                    map.invalidateSize();
                     map.flyTo([locationData.lat, locationData.lng], 15);
-                    if(heatCircle) map.removeLayer(heatCircle);
-                    heatCircle = L.circle([locationData.lat, locationData.lng], {
-                        color: weatherData.color,
-                        fillColor: weatherData.color,
-                        fillOpacity: 0.4,
-                        radius: 300 
-                    }).addTo(map);
-                    L.marker([locationData.lat, locationData.lng])
-                        .addTo(map)
-                        .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
-                        .openPopup();
+                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(locationData.name).openPopup();
                 }
-
-                statusMsg.innerText = "分析完成！";
-                document.getElementById('result-temp-desc').innerHTML = 
-                    `目前${locationData.name}氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span> (觀測時間: ${obsTime})<br>${weatherData.risk}`;
-                
-                document.getElementById('api-debug-info').innerText = `Source: ${weatherData.source} | Loc: ${locationData.name}`;
-
-                if(userInput) {
-                    document.getElementById('sim-address').value = userInput;
-                }
-
-            }, 800); 
+            }
         }
 
         // Feature 2: Simulation Logic
