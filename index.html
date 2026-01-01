@@ -38,6 +38,19 @@
                     },
                     animation: {
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float-up': 'float-up 2s infinite linear',
+                        'float-gentle': 'float-gentle 3s infinite ease-in-out',
+                    },
+                    keyframes: {
+                        'float-up': {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '50%': { opacity: '0.6' },
+                            '100%': { transform: 'translateY(-20px)', opacity: '0' },
+                        },
+                        'float-gentle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
                     }
                 }
             }
@@ -93,6 +106,25 @@
             font-family: 'Noto Sans TC', sans-serif;
             font-size: 14px;
             padding: 8px !important;
+        }
+        
+        /* New Textures for Simulator */
+        .bg-concrete-pattern {
+            background-color: #e2e8f0;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v5.1L6 40H0v-2h6L20 20.5zM0 22h20v2H0v-2zm35 5h5v2h-9.3L20 40h-6L35 27zM2 0h38v2H2V0zm38 0v40h-2V0h2z' fill='%2394a3b8' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        .bg-nature-pattern {
+            background-color: #dcfce7;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2316a34a' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .heat-haze {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to top, rgba(239, 68, 68, 0.1), transparent);
+            pointer-events: none;
         }
     </style>
 </head>
@@ -269,24 +301,45 @@
             <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
             <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
                 
-                <!-- Left: Visualizer (Modified: Added sticky, removed h-full, increased height) -->
+                <!-- Left: Visualizer (Modified: Enhanced Visuals) -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
-                    <!-- Increased height from h-80 to h-[500px] to match the form length better visually -->
-                    <div class="h-[500px] rounded-xl bg-slate-200 mb-8 overflow-hidden relative group shrink-0">
-                        <div id="img-before" class="absolute inset-0 w-full h-full bg-slate-400 flex items-center justify-center transition-opacity duration-700">
-                            <div class="text-center">
-                                <i class="fa-solid fa-layer-group text-6xl text-slate-600 mb-2"></i>
-                                <p class="text-slate-200 font-bold text-xl">原始現況</p>
+                    <!-- Improved Visualizer Window -->
+                    <div class="h-[500px] rounded-xl bg-slate-100 mb-8 overflow-hidden relative group shrink-0 border border-slate-200">
+                        
+                        <!-- Before State -->
+                        <div id="img-before" class="absolute inset-0 w-full h-full bg-concrete-pattern flex flex-col items-center justify-center transition-opacity duration-700">
+                            <div class="heat-haze"></div>
+                            <div class="relative z-10 text-center">
+                                <div class="mb-4 relative inline-block">
+                                    <i class="fa-solid fa-city text-8xl text-slate-400"></i>
+                                    <i class="fa-solid fa-sun text-5xl text-red-500 absolute -top-4 -right-4 animate-spin-slow" style="animation-duration: 10s;"></i>
+                                    <div class="absolute -bottom-2 -left-6 text-red-500 text-2xl animate-float-up"><i class="fa-solid fa-temperature-arrow-up"></i></div>
+                                    <div class="absolute bottom-4 -right-6 text-red-500 text-xl animate-float-up" style="animation-delay: 0.5s;"><i class="fa-solid fa-temperature-arrow-up"></i></div>
+                                </div>
+                                <p class="text-slate-600 font-bold text-2xl tracking-wide">原始現況</p>
+                                <p class="text-slate-500 text-sm mt-1">水泥鋪面 / 高蓄熱 / 排水不良</p>
                             </div>
                         </div>
-                        <div id="img-after" class="absolute inset-0 w-full h-full bg-emerald-600 flex items-center justify-center opacity-0 transition-opacity duration-700">
-                             <div class="text-center">
-                                <i class="fa-solid fa-seedling text-6xl text-white mb-2"></i>
-                                <p class="text-white font-bold text-xl" id="visual-label-after">模擬效果</p>
+
+                        <!-- After State -->
+                        <div id="img-after" class="absolute inset-0 w-full h-full bg-nature-pattern flex flex-col items-center justify-center opacity-0 transition-opacity duration-700">
+                             <div class="relative z-10 text-center">
+                                <div class="mb-4 relative inline-block">
+                                    <i class="fa-solid fa-building-circle-check text-8xl text-brand-green"></i>
+                                    <i class="fa-solid fa-cloud-sun text-5xl text-blue-400 absolute -top-4 -right-4 animate-float-gentle"></i>
+                                    <i class="fa-solid fa-seedling text-2xl text-green-500 absolute bottom-0 -left-8 animate-bounce" style="animation-duration: 2s;"></i>
+                                    <i class="fa-brands fa-envira text-2xl text-green-600 absolute top-10 -right-10 animate-pulse"></i>
+                                </div>
+                                <p class="text-brand-green font-bold text-2xl tracking-wide" id="visual-label-after">模擬效果</p>
+                                <p class="text-slate-600 text-sm mt-1">綠化植栽 / 降溫 / 基地保水</p>
                             </div>
+                            <!-- Decorative Elements -->
+                            <div class="absolute bottom-0 w-full h-12 bg-gradient-to-t from-green-100 to-transparent"></div>
                         </div>
-                        <div class="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm backdrop-blur transition-colors duration-500" id="img-badge">
-                            <span id="img-label">原始現況</span>
+
+                        <!-- Badge -->
+                        <div class="absolute bottom-4 left-4 bg-white/90 text-slate-700 px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur transition-all duration-500 border border-slate-200" id="img-badge">
+                            <span id="img-label"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>原始風險狀態</span>
                         </div>
                     </div>
 
@@ -296,8 +349,10 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
                                 <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
-                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm" style="width: 95%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm relative" style="width: 95%">
+                                    <div class="absolute inset-0 bg-white/20 rounded-full"></div>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -305,7 +360,7 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
                                 <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6">
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200">
                                 <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
                             </div>
                         </div>
@@ -600,7 +655,7 @@
             // 這裡使用一個新的變數 queryAddress 來傳給後端
             let queryAddress = userInput;
             if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
-                queryAddress = "台灣 " + userInput;
+                queryAddress = "台灣新北市" + userInput;
             }
 
             // 1. UI 狀態更新 (重置所有燈號為灰色)
