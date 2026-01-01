@@ -63,12 +63,10 @@
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
+        /* 修正：移除綠色圓點，改用乾淨的漸層背景 */
         .hero-pattern {
-            background-color: #f8fafc;
-            background-image: radial-gradient(#059669 0.5px, transparent 0.5px), radial-gradient(#059669 0.5px, #f8fafc 0.5px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            opacity: 0.5;
+            background: linear-gradient(to bottom right, #f8fafc, #edf7f3);
+            opacity: 1;
         }
         .toggle-checkbox:checked {
             right: 0;
@@ -111,20 +109,37 @@
         /* New Textures for Simulator */
         .bg-concrete-pattern {
             background-color: #e2e8f0;
-            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v5.1L6 40H0v-2h6L20 20.5zM0 22h20v2H0v-2zm35 5h5v2h-9.3L20 40h-6L35 27zM2 0h38v2H2V0zm38 0v40h-2V0h2z' fill='%2394a3b8' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            /* 移除複雜 SVG 紋理，改用純色確保不干擾 */
         }
         .bg-nature-pattern {
             background-color: #dcfce7;
-            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2316a34a' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
         }
-        .heat-haze {
+        
+        /* 關鍵修正：確保前後圖層絕對重疊且狀態正確 */
+        .sim-layer {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            inset: 0;
+            width: 100%;
             height: 100%;
-            background: linear-gradient(to top, rgba(239, 68, 68, 0.1), transparent);
-            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-in-out;
+            backface-visibility: hidden; /* 防止閃爍 */
+        }
+        
+        /* 當不透明度為 0 時，避免擋住點擊 */
+        .opacity-0 {
+            opacity: 0 !important;
+            pointer-events: none; 
+            z-index: 0;
+        }
+        
+        /* 顯示時層級較高 */
+        .opacity-100 {
+            opacity: 1 !important;
+            z-index: 10;
         }
     </style>
 </head>
@@ -301,44 +316,35 @@
             <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
             <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
                 
-                <!-- Left: Visualizer (Modified: Enhanced Visuals) -->
+                <!-- Left: Visualizer (Modified: Clean Layout) -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
                     <!-- Improved Visualizer Window -->
                     <div class="h-[500px] rounded-xl bg-slate-100 mb-8 overflow-hidden relative group shrink-0 border border-slate-200">
                         
-                        <!-- Before State -->
-                        <div id="img-before" class="absolute inset-0 w-full h-full bg-concrete-pattern flex flex-col items-center justify-center transition-opacity duration-700">
-                            <div class="heat-haze"></div>
+                        <!-- Before State (Layer 1: Bottom) -->
+                        <div id="img-before" class="sim-layer bg-concrete-pattern opacity-100">
                             <div class="relative z-10 text-center">
-                                <div class="mb-4 relative inline-block">
+                                <div class="mb-4 inline-block">
                                     <i class="fa-solid fa-city text-8xl text-slate-400"></i>
-                                    <i class="fa-solid fa-sun text-5xl text-red-500 absolute -top-4 -right-4 animate-spin-slow" style="animation-duration: 10s;"></i>
-                                    <div class="absolute -bottom-2 -left-6 text-red-500 text-2xl animate-float-up"><i class="fa-solid fa-temperature-arrow-up"></i></div>
-                                    <div class="absolute bottom-4 -right-6 text-red-500 text-xl animate-float-up" style="animation-delay: 0.5s;"><i class="fa-solid fa-temperature-arrow-up"></i></div>
                                 </div>
                                 <p class="text-slate-600 font-bold text-2xl tracking-wide">原始現況</p>
                                 <p class="text-slate-500 text-sm mt-1">水泥鋪面 / 高蓄熱 / 排水不良</p>
                             </div>
                         </div>
 
-                        <!-- After State -->
-                        <div id="img-after" class="absolute inset-0 w-full h-full bg-nature-pattern flex flex-col items-center justify-center opacity-0 transition-opacity duration-700">
+                        <!-- After State (Layer 2: Top, toggles opacity) -->
+                        <div id="img-after" class="sim-layer bg-nature-pattern opacity-0">
                              <div class="relative z-10 text-center">
-                                <div class="mb-4 relative inline-block">
+                                <div class="mb-4 inline-block">
                                     <i class="fa-solid fa-building-circle-check text-8xl text-brand-green"></i>
-                                    <i class="fa-solid fa-cloud-sun text-5xl text-blue-400 absolute -top-4 -right-4 animate-float-gentle"></i>
-                                    <i class="fa-solid fa-seedling text-2xl text-green-500 absolute bottom-0 -left-8 animate-bounce" style="animation-duration: 2s;"></i>
-                                    <i class="fa-brands fa-envira text-2xl text-green-600 absolute top-10 -right-10 animate-pulse"></i>
                                 </div>
                                 <p class="text-brand-green font-bold text-2xl tracking-wide" id="visual-label-after">模擬效果</p>
                                 <p class="text-slate-600 text-sm mt-1">綠化植栽 / 降溫 / 基地保水</p>
                             </div>
-                            <!-- Decorative Elements -->
-                            <div class="absolute bottom-0 w-full h-12 bg-gradient-to-t from-green-100 to-transparent"></div>
                         </div>
 
-                        <!-- Badge -->
-                        <div class="absolute bottom-4 left-4 bg-white/90 text-slate-700 px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur transition-all duration-500 border border-slate-200" id="img-badge">
+                        <!-- Badge (Always Top) -->
+                        <div class="absolute bottom-4 left-4 z-20 bg-white/90 text-slate-700 px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur transition-all duration-500 border border-slate-200" id="img-badge">
                             <span id="img-label"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>原始風險狀態</span>
                         </div>
                     </div>
@@ -1000,17 +1006,35 @@
 
         function toggleSimulation() {
             const isChecked = document.getElementById('sim-toggle').checked;
+            const imgBefore = document.getElementById('img-before');
             const imgAfter = document.getElementById('img-after');
             const imgBadge = document.getElementById('img-badge');
+            const imgLabel = document.getElementById('img-label');
+            const visualLabelAfter = document.getElementById('visual-label-after');
             
+            // Fix: Toggle opacity classes based on checked state
             if (isChecked) {
+                // Show After, Hide Before
                 imgAfter.classList.remove('opacity-0');
-                imgBadge.classList.replace('bg-black/60', 'bg-brand-green/90');
-                document.getElementById('img-label').innerText = '模擬效果';
+                imgAfter.classList.add('opacity-100');
+                
+                imgBefore.classList.remove('opacity-100');
+                imgBefore.classList.add('opacity-0');
+                
+                imgBadge.classList.replace('bg-white/90', 'bg-brand-green/90');
+                imgBadge.classList.replace('text-slate-700', 'text-white');
+                imgLabel.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i>模擬改善效果';
             } else {
+                // Show Before, Hide After
+                imgAfter.classList.remove('opacity-100');
                 imgAfter.classList.add('opacity-0');
-                imgBadge.classList.replace('bg-brand-green/90', 'bg-black/60');
-                document.getElementById('img-label').innerText = '原始現況';
+                
+                imgBefore.classList.remove('opacity-0');
+                imgBefore.classList.add('opacity-100');
+                
+                imgBadge.classList.replace('bg-brand-green/90', 'bg-white/90');
+                imgBadge.classList.replace('text-white', 'text-slate-700');
+                imgLabel.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>原始風險狀態';
                 
                 // Reset Charts visual only (logic handled in updateCalculations)
                 document.getElementById('bar-temp').style.width = '95%';
