@@ -528,16 +528,17 @@
 
             // 2. 新增：NCDR 淹水潛勢圖 (WMTS 服務 - WRA_FLOOD_600)
             // 關鍵修正：加入 maxNativeZoom: 12，防止縮放過近導致圖片消失
-            ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+            // 並加上 .png 副檔名修正 (Critical Fix)
+            ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
                 maxZoom: 20,
                 maxNativeZoom: 12, // ⭐️ 重要：若伺服器沒高清圖，自動放大低清圖，確保不消失
-                opacity: 0.7, 
+                opacity: 0.8, // 增加不透明度到 0.8，確保看得到
                 attribution: 'NCDR 淹水潛勢圖',
                 zIndex: 1000 // 強制置頂
             });
 
             // 3. 新增：NCDR 通用電子地圖 (測試用 - 不透明)
-            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
                 maxZoom: 20,
                 maxNativeZoom: 15,
                 opacity: 1.0, 
@@ -545,12 +546,12 @@
                 zIndex: 500
             });
 
-            // 4. 加入圖層控制器 (讓使用者可以手動開關)
-            const overlayMaps = {
-                "🔴 NCDR 淹水潛勢圖 (600mm)": ncdrLayer,
-                "🗺️ NCDR 通用電子地圖 (測試連線)": ncdrEmapLayer
-            };
-            L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+            // (已移除) 4. 加入圖層控制器 - 為了畫面簡潔暫時移除手動開關
+            // const overlayMaps = {
+            //     "🔴 NCDR 淹水潛勢圖 (600mm)": ncdrLayer,
+            //     "🗺️ NCDR 通用電子地圖 (測試連線)": ncdrEmapLayer
+            // };
+            // L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
         });
 
         // 輔助函式：取得 Mock 溫度 (當後端連線失敗時的備案)
@@ -594,11 +595,12 @@
                 return;
             }
 
-            // --- 修正 1：防止定位到中國 ---
-            if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
-                // 為了 API 搜尋精準，我們在變數裡加，但不要改掉使用者看到的 input
+            // --- 修正 1：強制台灣前綴，防止定位到日本板橋 ---
+            // 只有當輸入不包含「台灣」時才加，避免重複
+            let queryAddress = userInput;
+            if (!userInput.includes("台灣")) {
+                queryAddress = "台灣 " + userInput;
             }
-            const queryAddress = "台灣新北市" + userInput;
 
             // 1. UI 狀態更新 (重置所有燈號為灰色)
             btnText.innerText = '分析中...';
@@ -629,10 +631,18 @@
                 if (!geoRes.ok) throw new Error("地址定位失敗");
                 
                 const geoData = await geoRes.json();
+                
+                // 座標柵欄檢查 (Geofence Check)：如果在台灣範圍外，視為失敗
+                if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
+                    console.warn("定位到台灣以外區域，嘗試強制修正...");
+                    // 這裡可以做二次嘗試，或者直接報錯。為了演示，我們顯示警示
+                    statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
+                }
+
                 const locationData = {
                     lat: geoData.lat,
                     lng: geoData.lng,
-                    name: userInput 
+                    name: geoData.name // 使用 API 回傳的完整地址名稱
                 };
 
                 // 定位完成：定位燈號恆亮，氣象燈號閃爍
@@ -712,9 +722,16 @@
                         .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
                         .openPopup();
 
-                    // ★★★ 關鍵：確保圖層被加入 ★★★
-                    if(ncdrLayer) {
-                        ncdrLayer.addTo(map); 
+                    // ★★★ 關鍵：預設先顯示 EMAP 通用電子地圖，3秒後自動切換為淹水潛勢圖 ★★★
+                    // 這是一個 UX 技巧：先讓使用者看到「有圖層疊上去」的感覺，再切換到「潛勢圖」
+                    if(ncdrEmapLayer && ncdrLayer) {
+                        ncdrEmapLayer.addTo(map);
+                        setTimeout(() => {
+                            map.removeLayer(ncdrEmapLayer);
+                            ncdrLayer.addTo(map);
+                            // 提示使用者
+                            console.log("Switched to flood layer");
+                        }, 3000);
                     }
                 }
 
@@ -753,9 +770,17 @@
                     `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
+                // 備援模式也要試著加圖層
                 if(map) {
                     map.flyTo([locationData.lat, locationData.lng], 15);
                     L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(locationData.name).openPopup();
+                    if(ncdrEmapLayer && ncdrLayer) {
+                        ncdrEmapLayer.addTo(map);
+                        setTimeout(() => {
+                            map.removeLayer(ncdrEmapLayer);
+                            ncdrLayer.addTo(map);
+                        }, 3000);
+                    }
                 }
             }
         }
