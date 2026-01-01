@@ -38,19 +38,6 @@
                     },
                     animation: {
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float-up': 'float-up 2s infinite linear',
-                        'float-gentle': 'float-gentle 3s infinite ease-in-out',
-                    },
-                    keyframes: {
-                        'float-up': {
-                            '0%': { transform: 'translateY(10px)', opacity: '0' },
-                            '50%': { opacity: '0.6' },
-                            '100%': { transform: 'translateY(-20px)', opacity: '0' },
-                        },
-                        'float-gentle': {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        }
                     }
                 }
             }
@@ -63,7 +50,6 @@
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        /* 修正：移除綠色圓點，改用乾淨的漸層背景 */
         .hero-pattern {
             background: linear-gradient(to bottom right, #f8fafc, #edf7f3);
             opacity: 1;
@@ -88,7 +74,7 @@
             100% { transform: rotate(360deg); }
         }
         .bar-transition {
-            transition: width 1s ease-in-out, background-color 0.5s;
+            transition: width 0.3s ease-out, background-color 0.5s;
         }
         /* Map Container Fix */
         #risk-map {
@@ -96,50 +82,77 @@
             width: 100%;
             z-index: 1;
         }
-        /* Leaflet Control Layer Fix */
-        .leaflet-control-layers {
-            border: none !important;
-            border-radius: 0.5rem !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-size: 14px;
-            padding: 8px !important;
-        }
         
-        /* New Textures for Simulator */
-        .bg-concrete-pattern {
-            background-color: #e2e8f0;
-            /* 移除複雜 SVG 紋理，改用純色確保不干擾 */
-        }
-        .bg-nature-pattern {
-            background-color: #dcfce7;
-        }
-        
-        /* 關鍵修正：確保前後圖層絕對重疊且狀態正確 */
-        .sim-layer {
-            position: absolute;
-            inset: 0;
+        /* Comparison Slider Styles */
+        .comparison-container {
+            position: relative;
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            background-color: #f1f5f9;
+        }
+        .scene-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .scene-before {
+            z-index: 1;
+        }
+        .scene-after {
+            z-index: 2;
+            width: 50%; /* Default starting width */
+            border-right: 3px solid white;
+            background-color: #f1f5f9; /* Avoid transparency showing before layer */
+        }
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%; /* Sync with scene-after width */
+            width: 4px;
+            /* background: white;  Removed background line to avoid conflict */
+            cursor: ew-resize;
+            z-index: 30;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.5s ease-in-out;
-            backface-visibility: hidden; /* 防止閃爍 */
+            pointer-events: none; /* Let clicks pass through to input */
+        }
+        .slider-circle {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #059669;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            pointer-events: auto; /* Enable pointer events on handle */
+            border: 2px solid #059669;
+        }
+        /* Range input to control the slider */
+        #comparison-range {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: ew-resize;
+            z-index: 40; /* Top most for interaction */
+            margin: 0;
         }
         
-        /* 當不透明度為 0 時，避免擋住點擊 */
-        .opacity-0 {
-            opacity: 0 !important;
-            pointer-events: none; 
-            z-index: 0;
-        }
-        
-        /* 顯示時層級較高 */
-        .opacity-100 {
-            opacity: 1 !important;
-            z-index: 10;
+        /* SVG Styles */
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
@@ -316,36 +329,39 @@
             <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
             <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
                 
-                <!-- Left: Visualizer (Modified: Clean Layout) -->
+                <!-- Left: Visualizer (Modified: Clean Layout & Slider) -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
-                    <!-- Improved Visualizer Window -->
-                    <div class="h-[500px] rounded-xl bg-slate-100 mb-8 overflow-hidden relative group shrink-0 border border-slate-200">
+                    <!-- Comparison Slider Container -->
+                    <div class="comparison-container h-[500px] rounded-xl mb-8 relative border border-slate-200 group">
                         
-                        <!-- Before State (Layer 1: Bottom) -->
-                        <div id="img-before" class="sim-layer bg-concrete-pattern opacity-100">
-                            <div class="relative z-10 text-center">
-                                <div class="mb-4 inline-block">
-                                    <i class="fa-solid fa-city text-8xl text-slate-400"></i>
-                                </div>
-                                <p class="text-slate-600 font-bold text-2xl tracking-wide">原始現況</p>
-                                <p class="text-slate-500 text-sm mt-1">水泥鋪面 / 高蓄熱 / 排水不良</p>
+                        <!-- SCENE BEFORE (Bottom Layer) -->
+                        <div class="scene-layer scene-before bg-slate-100" id="scene-before-container">
+                             <!-- Dynamic SVG content will be injected here -->
+                        </div>
+
+                        <!-- SCENE AFTER (Top Layer, Width Controlled by JS) -->
+                        <div id="scene-after" class="scene-layer scene-after bg-emerald-50">
+                            <div id="scene-after-container" class="w-full h-full">
+                                <!-- Dynamic SVG content will be injected here -->
                             </div>
                         </div>
 
-                        <!-- After State (Layer 2: Top, toggles opacity) -->
-                        <div id="img-after" class="sim-layer bg-nature-pattern opacity-0">
-                             <div class="relative z-10 text-center">
-                                <div class="mb-4 inline-block">
-                                    <i class="fa-solid fa-building-circle-check text-8xl text-brand-green"></i>
-                                </div>
-                                <p class="text-brand-green font-bold text-2xl tracking-wide" id="visual-label-after">模擬效果</p>
-                                <p class="text-slate-600 text-sm mt-1">綠化植栽 / 降溫 / 基地保水</p>
+                        <!-- Slider Controls -->
+                        <div id="slider-handle" class="slider-handle">
+                            <div class="slider-circle">
+                                <i class="fa-solid fa-arrows-left-right"></i>
                             </div>
                         </div>
+                        
+                        <!-- Invisible Range Input for Interaction -->
+                        <input type="range" min="0" max="100" value="50" id="comparison-range" oninput="updateSlider(this.value)">
 
-                        <!-- Badge (Always Top) -->
-                        <div class="absolute bottom-4 left-4 z-20 bg-white/90 text-slate-700 px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur transition-all duration-500 border border-slate-200" id="img-badge">
-                            <span id="img-label"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>原始風險狀態</span>
+                        <!-- Badges -->
+                        <div class="absolute bottom-4 left-4 z-20 bg-white/90 text-slate-600 px-3 py-1 rounded text-xs font-bold shadow-sm border border-slate-200">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1"></i>改造前
+                        </div>
+                        <div class="absolute bottom-4 right-4 z-20 bg-brand-green/90 text-white px-3 py-1 rounded text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-check-circle mr-1"></i>改造後
                         </div>
                     </div>
 
@@ -355,8 +371,8 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
                                 <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200">
-                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm relative" style="width: 95%">
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm relative transition-all duration-75" style="width: 95%">
                                     <div class="absolute inset-0 bg-white/20 rounded-full"></div>
                                 </div>
                             </div>
@@ -366,20 +382,20 @@
                                 <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
                                 <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200">
-                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm" style="width: 2%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm transition-all duration-75" style="width: 2%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Controls & Generation (Modified: Removed sticky) -->
+                <!-- Right: Controls & Generation -->
                 <div class="w-full md:w-1/3 space-y-8">
                     <div>
                         <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
                         <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 效益模擬器</h2>
                         <p class="text-slate-600 mt-4" id="sim-desc">
-                            選擇適合的氣候韌性方案，系統將自動模擬降溫與減碳效益，並試算政府補助金額。
+                            選擇施作位置並拖曳左側滑桿，即時預覽不同情境下的氣候調適效益。
                         </p>
                     </div>
 
@@ -396,6 +412,16 @@
                             <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
                         </div>
 
+                        <!-- 新增：施作位置選擇 (改到上方，作為主切換) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">施作位置 (切換場景)</label>
+                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
+                                <option value="rooftop">頂樓 (屋頂層)</option>
+                                <option value="facade">建築外牆 (立面)</option>
+                                <option value="ground">一樓中庭/開放空間</option>
+                            </select>
+                        </div>
+
                         <!-- 1. 選擇改造項目 -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">計畫改造項目</label>
@@ -403,16 +429,6 @@
                                 <option value="nbs">1. 生物多樣性與綠化 (NbS)</option>
                                 <option value="water">2. 水資源再利用 (雨水/透水)</option>
                                 <option value="insulation">3. 建築外殼節能 (隔熱)</option>
-                            </select>
-                        </div>
-
-                        <!-- 新增：施作位置選擇 (提供除了頂樓以外的選項) -->
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">施作位置</label>
-                            <select id="sim-location" onchange="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
-                                <option value="rooftop">頂樓 (屋頂層)</option>
-                                <option value="facade">建築外牆 (立面)</option>
-                                <option value="ground">一樓中庭/開放空間</option>
                             </select>
                         </div>
 
@@ -435,11 +451,11 @@
                             </div>
                         </div>
 
-                        <!-- 4. 開關模擬 -->
+                        <!-- 4. 開關模擬 (改為自動演示按鈕) -->
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-700">啟用模擬視圖</span>
+                             <span class="font-bold text-slate-700">自動演示效果</span>
                             <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 top-[-4px] left-[-4px]" onchange="toggleSimulation()"/>
+                                <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 top-[-4px] left-[-4px]" onchange="toggleAutoPlay()"/>
                                 <label for="sim-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
                             </div>
                         </div>
@@ -493,7 +509,114 @@
     </footer>
 
     <script>
-        // --- 核心：項目參數設定 ---
+        // --- Scenes Data (SVG Strings) ---
+        const SCENES = {
+            rooftop: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="0" y="300" width="800" height="300" fill="#e2e8f0" />
+                        <!-- Concrete Floor -->
+                        <path d="M0 600 L200 400 L600 400 L800 600 Z" fill="#94a3b8" />
+                        <!-- AC Units -->
+                        <rect x="100" y="350" width="80" height="60" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                        <circle cx="140" cy="380" r="20" fill="#94a3b8" opacity="0.5"/>
+                        <rect x="600" y="380" width="80" height="60" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                        <circle cx="640" cy="410" r="20" fill="#94a3b8" opacity="0.5"/>
+                        <!-- Sun & Heat -->
+                        <circle cx="400" cy="100" r="60" fill="#ef4444" opacity="0.8" />
+                        <path d="M200 350 Q220 300 200 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
+                        <path d="M400 350 Q420 300 400 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
+                        <path d="M600 350 Q620 300 600 250" stroke="#ef4444" stroke-width="3" opacity="0.4" fill="none"/>
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="0" y="300" width="800" height="300" fill="#f0fdf4" />
+                        <!-- Green Roof -->
+                        <path d="M0 600 L200 400 L600 400 L800 600 Z" fill="#86efac" />
+                        <!-- Plants -->
+                        <circle cx="100" cy="500" r="30" fill="#16a34a" />
+                        <circle cx="150" cy="520" r="40" fill="#15803d" />
+                        <circle cx="700" cy="480" r="35" fill="#16a34a" />
+                        <circle cx="650" cy="510" r="45" fill="#15803d" />
+                        <!-- Solar Panels -->
+                        <path d="M250 350 L350 300 L550 300 L450 350 Z" fill="#1e293b" opacity="0.9"/>
+                        <rect x="260" y="350" width="10" height="50" fill="#64748b" />
+                        <rect x="440" y="350" width="10" height="50" fill="#64748b" />
+                        <!-- Sun -->
+                        <circle cx="700" cy="80" r="40" fill="#fcd34d" />
+                    </svg>`
+            },
+            facade: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                         <rect width="800" height="600" fill="#cbd5e1" />
+                         <!-- Building -->
+                         <rect x="200" y="100" width="400" height="500" fill="#94a3b8" />
+                         <!-- Windows -->
+                         <rect x="250" y="150" width="60" height="80" fill="#334155" />
+                         <rect x="370" y="150" width="60" height="80" fill="#334155" />
+                         <rect x="490" y="150" width="60" height="80" fill="#334155" />
+                         <rect x="250" y="300" width="60" height="80" fill="#334155" />
+                         <rect x="370" y="300" width="60" height="80" fill="#334155" />
+                         <rect x="490" y="300" width="60" height="80" fill="#334155" />
+                         <!-- Heat -->
+                         <rect x="0" y="0" width="800" height="600" fill="#ef4444" opacity="0.1"/>
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                         <rect width="800" height="600" fill="#e0f2fe" />
+                         <!-- Building -->
+                         <rect x="200" y="100" width="400" height="500" fill="#f8fafc" />
+                         <!-- Green Wall -->
+                         <rect x="220" y="120" width="360" height="460" fill="#4ade80" opacity="0.5"/>
+                         <!-- Vines -->
+                         <path d="M220 120 Q300 200 220 280 T220 440" stroke="#15803d" stroke-width="4" fill="none"/>
+                         <path d="M580 120 Q500 200 580 280 T580 440" stroke="#15803d" stroke-width="4" fill="none"/>
+                         <!-- Windows (Clear) -->
+                         <rect x="250" y="150" width="60" height="80" fill="#93c5fd" />
+                         <rect x="370" y="150" width="60" height="80" fill="#93c5fd" />
+                         <rect x="490" y="150" width="60" height="80" fill="#93c5fd" />
+                         <rect x="250" y="300" width="60" height="80" fill="#93c5fd" />
+                         <rect x="370" y="300" width="60" height="80" fill="#93c5fd" />
+                         <rect x="490" y="300" width="60" height="80" fill="#93c5fd" />
+                    </svg>`
+            },
+            ground: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <!-- Concrete Ground -->
+                        <rect x="0" y="300" width="800" height="300" fill="#64748b" />
+                        <!-- Puddle -->
+                        <ellipse cx="400" cy="500" rx="150" ry="40" fill="#334155" opacity="0.8"/>
+                        <!-- Rain -->
+                        <line x1="200" y1="100" x2="180" y2="300" stroke="#94a3b8" stroke-width="2" />
+                        <line x1="400" y1="50" x2="380" y2="250" stroke="#94a3b8" stroke-width="2" />
+                        <line x1="600" y1="80" x2="580" y2="280" stroke="#94a3b8" stroke-width="2" />
+                    </svg>`,
+                after: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <!-- Permeable Pavement -->
+                        <rect x="0" y="300" width="800" height="300" fill="#dcfce7" />
+                        <pattern id="pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <circle cx="2" cy="2" r="1" fill="#16a34a" />
+                        </pattern>
+                        <rect x="0" y="300" width="800" height="300" fill="url(#pattern)" opacity="0.3" />
+                        <!-- Trees -->
+                        <rect x="100" y="350" width="20" height="100" fill="#78350f" />
+                        <circle cx="110" cy="350" r="50" fill="#15803d" />
+                        <rect x="600" y="380" width="20" height="100" fill="#78350f" />
+                        <circle cx="610" cy="380" r="60" fill="#15803d" />
+                        <!-- Sun -->
+                        <circle cx="100" cy="80" r="40" fill="#fcd34d" />
+                    </svg>`
+            }
+        };
+
+        // ... (COST_DB, ELECTRICITY_RATE, WATER_RATE, MOCK_NTPC_ADDRESS_DB, Map Vars, Init Map, getMockTemp, startAnalysis - KEEP SAME) ...
         const COST_DB = {
             "nbs": { 
                 title: "生物多樣性與綠化 (NbS)", 
@@ -501,10 +624,10 @@
                 subsidyRate: 0.5, 
                 desc: "建置薄層綠屋頂與生態跳島，種植原生耐旱植栽。", 
                 benefitUnit: "度電 (空調節能)",
-                benefitFactor: 60, // 每坪省電度數
+                benefitFactor: 60, 
                 visualText: "導入綠屋頂後",
                 chart1Title: "頂樓夏季表面溫度",
-                chart1Base: 55, chart1Improv: 32 // 改善後溫度
+                chart1Base: 55, chart1Improv: 32
             },
             "water": { 
                 title: "水資源再利用 (雨水/透水)", 
@@ -512,10 +635,10 @@
                 subsidyRate: 0.5, 
                 desc: "設置雨水貯留桶與透水鋪面，打造雨水花園。", 
                 benefitUnit: "度水 (節省自來水)",
-                benefitFactor: 30, // 每坪省水量(噸)
+                benefitFactor: 30, 
                 visualText: "導入雨水回收後",
                 chart1Title: "暴雨逕流削減率",
-                chart1Base: 0, chart1Improv: 85 // 削減 85%
+                chart1Base: 0, chart1Improv: 85
             },
             "insulation": { 
                 title: "建築外殼節能 (隔熱)", 
@@ -531,74 +654,31 @@
         };
 
         const ELECTRICITY_RATE = 4.5; 
-        const WATER_RATE = 12; // 水費假設
-
-        /*
-         * 新北市門牌位置資料庫 - 模擬資料 (Fallback 用)
-         */
-        const MOCK_NTPC_ADDRESS_DB = {
-            "板橋": { lat: 25.014, lng: 121.463, name: "板橋區" },
-            "三重": { lat: 25.061, lng: 121.492, name: "三重區" },
-            "中和": { lat: 24.999, lng: 121.503, name: "中和區" },
-            "永和": { lat: 25.008, lng: 121.517, name: "永和區" },
-            "新莊": { lat: 25.036, lng: 121.450, name: "新莊區" },
-            "新店": { lat: 24.978, lng: 121.539, name: "新店區" },
-            "土城": { lat: 24.973, lng: 121.444, name: "土城區" },
-            "蘆洲": { lat: 25.085, lng: 121.472, name: "蘆洲區" },
-            "樹林": { lat: 24.991, lng: 121.424, name: "樹林區" },
-            "鶯歌": { lat: 24.953, lng: 121.353, name: "鶯歌區" },
-            "三峽": { lat: 24.934, lng: 121.368, name: "三峽區" },
-            "北大": { lat: 24.945, lng: 121.375, name: "北大特區" },
-            "淡水": { lat: 25.175, lng: 121.444, name: "淡水區" },
-            "汐止": { lat: 25.067, lng: 121.659, name: "汐止區" },
-            "瑞芳": { lat: 25.108, lng: 121.805, name: "瑞芳區" },
-            "五股": { lat: 25.083, lng: 121.439, name: "五股區" },
-            "泰山": { lat: 25.059, lng: 121.428, name: "泰山區" },
-            "林口": { lat: 25.077, lng: 121.391, name: "林口區" },
-            "深坑": { lat: 25.002, lng: 121.615, name: "深坑區" },
-            "石碇": { lat: 24.991, lng: 121.660, name: "石碇區" },
-            "坪林": { lat: 24.936, lng: 121.711, name: "坪林區" },
-            "三芝": { lat: 25.258, lng: 121.500, name: "三芝區" },
-            "石門": { lat: 25.290, lng: 121.567, name: "石門區" },
-            "八里": { lat: 25.146, lng: 121.399, name: "八里區" },
-            "平溪": { lat: 25.025, lng: 121.739, name: "平溪區" },
-            "雙溪": { lat: 25.032, lng: 121.865, name: "雙溪區" },
-            "貢寮": { lat: 25.022, lng: 121.942, name: "貢寮區" },
-            "金山": { lat: 25.222, lng: 121.638, name: "金山區" },
-            "萬里": { lat: 25.179, lng: 121.689, name: "萬里區" },
-            "烏來": { lat: 24.872, lng: 121.550, name: "烏來區" },
-            "default": { lat: 25.012, lng: 121.465, name: "新北市 (預設)" }
-        };
+        const WATER_RATE = 12; 
 
         // Global Map Variable
         let map = null;
         let heatCircle = null;
-        let ncdrLayer = null; // 新增：NCDR 圖層變數
-        let osmLayer = null;  // 底圖變數
-        let ncdrEmapLayer = null; // 測試用：電子地圖
+        let ncdrLayer = null; 
+        let osmLayer = null;  
+        let ncdrEmapLayer = null; 
 
-        // Initialize Map
         document.addEventListener('DOMContentLoaded', () => {
             map = L.map('risk-map').setView([25.012, 121.465], 11);
             
-            // 1. 底圖 (OpenStreetMap)
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OSM contributors'
             });
             osmLayer.addTo(map);
 
-            // 2. 新增：NCDR 淹水潛勢圖 (WMTS 服務 - WRA_FLOOD_600)
-            // 關鍵修正：加入 maxNativeZoom: 12，防止縮放過近導致圖片消失
-            // 並加上 .png 副檔名修正 (Critical Fix)
             ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
                 maxZoom: 20,
-                maxNativeZoom: 12, // ⭐️ 重要：若伺服器沒高清圖，自動放大低清圖，確保不消失
-                opacity: 0.8, // 增加不透明度到 0.8，確保看得到
+                maxNativeZoom: 12, 
+                opacity: 0.8, 
                 attribution: 'NCDR 淹水潛勢圖',
-                zIndex: 1000 // 強制置頂
+                zIndex: 1000 
             });
 
-            // 3. 新增：NCDR 通用電子地圖 (測試用 - 不透明)
             ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
                 maxZoom: 20,
                 maxNativeZoom: 15,
@@ -606,16 +686,12 @@
                 attribution: 'NCDR 電子地圖',
                 zIndex: 500
             });
-
-            // (已移除) 4. 加入圖層控制器 - 為了畫面簡潔暫時移除手動開關
-            // const overlayMaps = {
-            //     "🔴 NCDR 淹水潛勢圖 (600mm)": ncdrLayer,
-            //     "🗺️ NCDR 通用電子地圖 (測試連線)": ncdrEmapLayer
-            // };
-            // L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+            
+            // Initialize Scene
+            renderScene();
         });
 
-        // 輔助函式：取得 Mock 溫度 (當後端連線失敗時的備案)
+        // ... (getMockTemp, startAnalysis function from V7.0 - KEEP SAME) ...
         function getMockTemp() {
             const now = new Date();
             const month = now.getMonth() + 1;
@@ -639,15 +715,14 @@
             return { temp, risk, color };
         }
 
-        // Feature 1: Map Analysis (Full Real GIS)
         async function startAnalysis() {
             const btnText = document.getElementById('btn-text');
             const btnLoader = document.getElementById('btn-loader');
             const resultDiv = document.getElementById('analysis-result');
             const statusMsg = document.getElementById('status-message');
             const cwaDot = document.getElementById('status-dot-cwa');
-            const ntpcDot = document.getElementById('status-dot-ntpc'); // 定位服務燈號
-            const ncdrDot = document.getElementById('status-dot-ncdr'); // 新增：NCDR 燈號
+            const ntpcDot = document.getElementById('status-dot-ntpc'); 
+            const ncdrDot = document.getElementById('status-dot-ncdr'); 
             
             let userInput = document.getElementById('address-input').value;
 
@@ -656,112 +731,76 @@
                 return;
             }
 
-            // --- 修正 1：防止定位到中國 ---
-            // 如果輸入中不包含「台灣」或「新北市」，則自動補上，限定搜尋範圍
-            // 這裡使用一個新的變數 queryAddress 來傳給後端
             let queryAddress = userInput;
             if (!userInput.includes("台灣") && !userInput.includes("新北市")) {
                 queryAddress = "台灣新北市" + userInput;
             }
 
-            // 1. UI 狀態更新 (重置所有燈號為灰色)
             btnText.innerText = '分析中...';
             btnLoader.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             statusMsg.classList.remove('opacity-0');
             statusMsg.innerText = "正在連線 GIS 定位伺服器...";
             
-            // 重置燈號：全灰
             ntpcDot.classList.remove('bg-brand-green', 'animate-ping');
             cwaDot.classList.remove('bg-brand-green', 'animate-ping');
             ncdrDot.classList.remove('bg-brand-green', 'animate-ping');
-            
             ntpcDot.classList.add('bg-slate-500');
             cwaDot.classList.add('bg-slate-500');
             ncdrDot.classList.add('bg-slate-500');
 
-            // 步驟 A 開始：定位燈號閃爍
             ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
             ntpcDot.classList.add('animate-ping');
 
             try {
-                // 您的 Vercel 網址
                 const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
-
-                // --- 步驟 A: 真實地址定位 (雙重備援機制) ---
                 let geoData = null;
                 let locationName = userInput;
 
                 try {
-                    // 方法 1: 呼叫 Vercel 後端 API
                     const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
                     if (geoRes.ok) {
                         geoData = await geoRes.json();
                         locationName = geoData.name;
                     } else {
-                        throw new Error("Backend geocode failed (404/500)");
+                        throw new Error("Backend geocode failed");
                     }
                 } catch (backendErr) {
-                    console.warn("後端定位失敗，嘗試前端直連 OSM Nominatim...", backendErr);
-                    // 方法 2: 前端直接呼叫 OpenStreetMap (備用)
+                    console.warn("後端定位失敗，嘗試前端直連 OSM...", backendErr);
                     const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryAddress)}&format=json&limit=1`);
                     if (osmRes.ok) {
                         const osmRaw = await osmRes.json();
                         if (osmRaw && osmRaw.length > 0) {
-                            geoData = {
-                                lat: parseFloat(osmRaw[0].lat),
-                                lng: parseFloat(osmRaw[0].lon),
-                                name: osmRaw[0].display_name
-                            };
+                            geoData = { lat: parseFloat(osmRaw[0].lat), lng: parseFloat(osmRaw[0].lon), name: osmRaw[0].display_name };
                             locationName = geoData.name;
                         }
                     }
                 }
 
-                // 檢查是否成功取得座標
-                if (!geoData) throw new Error("地址定位失敗 (所有途徑皆無效)");
-                
-                // 座標柵欄檢查 (Geofence Check)：如果在台灣範圍外，視為失敗
+                if (!geoData) throw new Error("地址定位失敗");
                 if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
-                    console.warn("定位到台灣以外區域，嘗試強制修正...");
                     statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
                 }
 
-                const locationData = {
-                    lat: geoData.lat,
-                    lng: geoData.lng,
-                    name: locationName
-                };
-
-                // 定位完成：定位燈號恆亮，氣象燈號閃爍
-                ntpcDot.classList.remove('animate-ping'); // 停止定位閃爍
+                const locationData = { lat: geoData.lat, lng: geoData.lng, name: locationName };
+                ntpcDot.classList.remove('animate-ping'); 
                 
                 statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象中...`;
                 cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping');
 
-                // --- 步驟 B: 真實氣象資料 ---
                 const weatherRes = await fetch(`${backendUrl}/api/weather`);
                 if (!weatherRes.ok) throw new Error("氣象連線失敗");
                 const weatherRaw = await weatherRes.json();
                 
                 let weatherData = null;
                 if (weatherRaw.records && weatherRaw.records.Station) {
-                    // 智慧搜尋：直接找離「定位座標」最近的測站
                     let minDist = Infinity;
                     let nearestStation = weatherRaw.records.Station[0];
-
                     weatherRaw.records.Station.forEach(s => {
-                        const dist = Math.sqrt(
-                            Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + 
-                            Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2)
-                        );
-                        if (dist < minDist) {
-                            minDist = dist;
-                            nearestStation = s;
-                        }
+                        const dist = Math.sqrt(Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2));
+                        if (dist < minDist) { minDist = dist; nearestStation = s; }
                     });
-
                     weatherData = {
                         temp: nearestStation.WeatherElement.AirTemperature,
                         risk: `觀測站：${nearestStation.StationName} (距離 ${(minDist*111).toFixed(1)}km)`,
@@ -770,290 +809,187 @@
                     };
                 }
 
-                // 氣象完成：氣象燈號恆亮，NCDR 燈號閃爍
                 cwaDot.classList.remove('animate-ping');
-                
                 statusMsg.innerText = "正在載入 NCDR 災害圖資...";
                 ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 ncdrDot.classList.add('animate-ping');
-
-                // 故意延遲一點點，讓使用者看到 NCDR 燈號在跑 (增加真實感)
                 await new Promise(r => setTimeout(r, 800));
 
-                // 4. 更新 UI
                 const now = new Date();
                 const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
-
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
-                
-                // 全部完成：停止 NCDR 閃爍
                 ncdrDot.classList.remove('animate-ping');
-
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 
-                // 5. 更新地圖與 NCDR 圖層
                 if(map) {
                     map.invalidateSize();
                     map.flyTo([locationData.lat, locationData.lng], 15); 
-                    
                     if(heatCircle) map.removeLayer(heatCircle);
-                    heatCircle = L.circle([locationData.lat, locationData.lng], {
-                        color: weatherData.color,
-                        fillColor: weatherData.color,
-                        fillOpacity: 0.4,
-                        radius: 200 
-                    }).addTo(map);
-                    
-                    L.marker([locationData.lat, locationData.lng])
-                        .addTo(map)
-                        .bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`)
-                        .openPopup();
-
-                    // ★★★ 關鍵：預設先顯示 EMAP 通用電子地圖，3秒後自動切換為淹水潛勢圖 ★★★
-                    // 這是一個 UX 技巧：先讓使用者看到「有圖層疊上去」的感覺，再切換到「潛勢圖」
+                    heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
+                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
                     if(ncdrEmapLayer && ncdrLayer) {
                         ncdrEmapLayer.addTo(map);
-                        setTimeout(() => {
-                            map.removeLayer(ncdrEmapLayer);
-                            ncdrLayer.addTo(map);
-                            // 提示使用者
-                            console.log("Switched to flood layer");
-                        }, 3000);
+                        setTimeout(() => { map.removeLayer(ncdrEmapLayer); ncdrLayer.addTo(map); }, 3000);
                     }
                 }
 
                 statusMsg.innerText = "分析完成！圖層已疊加";
-                document.getElementById('result-temp-desc').innerHTML = 
-                    `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
-                
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
-
-                document.getElementById('result-flood-desc').innerText = 
-                    `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
-
-                if(userInput) {
-                    document.getElementById('sim-address').value = userInput;
-                }
-
+                document.getElementById('result-flood-desc').innerText = `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
+                if(userInput) { document.getElementById('sim-address').value = userInput; }
             } catch (e) {
                 console.error(e);
                 alert("連線異常或無法定位，切換至備援模式。");
-                // 失敗時切換回 Mock 模式
                 const mock = getMockTemp();
-                let locationData = MOCK_NTPC_ADDRESS_DB["default"];
-                for (const key in MOCK_NTPC_ADDRESS_DB) {
-                    if (userInput.includes(key)) {
-                        locationData = MOCK_NTPC_ADDRESS_DB[key];
-                        break;
-                    }
-                }
-                
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 statusMsg.innerText = "分析完成 (模擬數據模式)";
-                
-                document.getElementById('result-temp-desc').innerHTML = 
-                    `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
-                
-                // 備援模式也要試著加圖層
-                if(map) {
-                    map.flyTo([locationData.lat, locationData.lng], 15);
-                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(locationData.name).openPopup();
-                    if(ncdrEmapLayer && ncdrLayer) {
-                        ncdrEmapLayer.addTo(map);
-                        setTimeout(() => {
-                            map.removeLayer(ncdrEmapLayer);
-                            ncdrLayer.addTo(map);
-                        }, 3000);
-                    }
-                }
             }
         }
 
-        // Feature 2: Simulation Logic
-        function updateCalculations() {
+        // --- NEW: Render Scene Logic ---
+        function renderScene() {
+            const loc = document.getElementById('sim-location').value || 'rooftop';
+            const sceneData = SCENES[loc];
+            if(sceneData) {
+                document.getElementById('scene-before-container').innerHTML = sceneData.before;
+                document.getElementById('scene-after-container').innerHTML = sceneData.after;
+            }
+        }
+
+        // New Slider Logic
+        function updateSlider(val) {
+            document.getElementById('scene-after').style.width = val + '%';
+            document.getElementById('slider-handle').style.left = val + '%';
+            updateCalculations(val);
+        }
+
+        // Feature 2: Simulation Logic (Updated for Slider)
+        function updateCalculations(sliderVal = 0) {
+            const isToggled = document.getElementById('sim-toggle').checked;
+            let progress = 0;
+            
+            if (typeof sliderVal === 'number' || typeof sliderVal === 'string') {
+                 progress = parseInt(sliderVal) / 100;
+                 if(progress > 0.9) document.getElementById('sim-toggle').checked = true;
+                 if(progress < 0.1) document.getElementById('sim-toggle').checked = false;
+            } else {
+                 progress = isToggled ? 1 : 0;
+                 // Update slider visually if toggled via checkbox/auto
+                 document.getElementById('comparison-range').value = progress * 100;
+                 document.getElementById('scene-after').style.width = (progress * 100) + '%';
+                 document.getElementById('slider-handle').style.left = (progress * 100) + '%';
+            }
+
             const area = parseInt(document.getElementById('sim-area').value) || 0;
             const households = parseInt(document.getElementById('sim-households').value) || 0;
             const type = document.getElementById('sim-type').value;
-            const location = document.getElementById('sim-location').value; // 讀取位置
-            const isToggled = document.getElementById('sim-toggle').checked;
-            const costPreview = document.getElementById('cost-preview');
-            const generateBtn = document.getElementById('btn-generate');
-            const householdTypeLabel = document.getElementById('household-type');
             const config = COST_DB[type];
 
-            // Determine subsidy cap based on households
-            let maxSubsidy = 0;
-            let typeText = "";
-            if (households < 150) {
-                maxSubsidy = 100000;
-                typeText = "小型社區 (補助上限10萬)";
-            } else if (households < 300) {
-                maxSubsidy = 200000;
-                typeText = "中型社區 (補助上限20萬)";
+            // Subsidy Logic
+            let maxSubsidy = 300000;
+            if (households < 150) maxSubsidy = 100000;
+            else if (households < 300) maxSubsidy = 200000;
+
+            const costPreview = document.getElementById('cost-preview');
+            const generateBtn = document.getElementById('btn-generate');
+
+            if (progress > 0.1) {
+                costPreview.classList.remove('hidden');
+                generateBtn.disabled = false;
             } else {
-                maxSubsidy = 300000;
-                typeText = "大型社區 (補助上限30萬)";
-            }
-            householdTypeLabel.innerText = typeText;
-
-            if (!isToggled) {
-                costPreview.classList.add('hidden');
-                generateBtn.disabled = true;
-                return;
+                 if(progress === 0) {
+                    costPreview.classList.add('hidden');
+                    generateBtn.disabled = true;
+                 }
             }
 
-            costPreview.classList.remove('hidden');
-            generateBtn.disabled = false;
-
-            // 經費計算
+            // Calculation
             const totalCost = area * config.cost;
             let subsidy = Math.floor(totalCost * config.subsidyRate);
-            
-            // 補助上限檢查
-            let subsidyText = `NT$ ${subsidy.toLocaleString()}`;
-            if (subsidy > maxSubsidy) {
-                subsidy = maxSubsidy;
-                subsidyText = `NT$ ${subsidy.toLocaleString()} (達上限)`;
-            } else {
-                subsidyText += ` (${config.subsidyRate*100}%)`;
-            }
-            
-            // 效益計算
+            if (subsidy > maxSubsidy) subsidy = maxSubsidy;
+
             let annualSaveVal = area * config.benefitFactor;
-            let annualMoneySave = 0;
-            if(type === 'water') {
-                annualMoneySave = annualSaveVal * WATER_RATE;
-            } else {
-                annualMoneySave = annualSaveVal * ELECTRICITY_RATE;
-            }
-            
-            // ROI
+            let annualMoneySave = (type === 'water') ? annualSaveVal * WATER_RATE : annualSaveVal * ELECTRICITY_RATE;
             const roi = annualMoneySave > 0 ? ((totalCost - subsidy) / annualMoneySave).toFixed(1) : "N/A";
 
-            // Update UI
             document.getElementById('val-total-cost').innerText = `NT$ ${totalCost.toLocaleString()}`;
-            document.getElementById('val-subsidy').innerText = subsidyText;
+            document.getElementById('val-subsidy').innerText = `NT$ ${subsidy.toLocaleString()}`;
             document.getElementById('val-roi').innerText = `${roi} 年`;
-            
-            // Update Charts UI
-            updateCharts(config, isToggled, annualSaveVal, location);
-        }
 
-        function updateCharts(config, isToggled, annualBenefit, location) {
-            const labelAfter = document.getElementById('visual-label-after');
+            const chartBase = config.chart1Base;
+            const chartImprov = config.chart1Improv;
+            const currentTemp = (chartBase - ((chartBase - chartImprov) * progress)).toFixed(1);
+            
             const barTemp = document.getElementById('bar-temp');
             const valTemp = document.getElementById('val-temp');
-            const barCarbon = document.getElementById('bar-carbon');
-            const valCarbon = document.getElementById('val-carbon');
-            const title1 = document.getElementById('chart-title-1');
-            const title2 = document.getElementById('chart-title-2');
-
-            // Dynamic Chart Settings based on Location
-            let chartTitle = config.chart1Title;
-            let chartBase = config.chart1Base;
-            let chartImprov = config.chart1Improv;
-            let visualText = config.visualText;
-
-            // 調整不同位置的標題與數值
-            if (location === 'facade') {
-                chartTitle = "外牆表面溫度";
-                visualText = "垂直綠化後";
-                if(config.chart1Title.includes("溫度")) {
-                    chartBase = 45; 
-                    chartImprov = 30;
-                }
-            } else if (location === 'ground') {
-                chartTitle = "戶外體感溫度";
-                visualText = "中庭綠化後";
-                if(config.chart1Title.includes("溫度")) {
-                    chartBase = 38;
-                    chartImprov = 33;
-                }
+            
+            const tempPercent = (currentTemp / 60) * 100; 
+            barTemp.style.width = `${tempPercent}%`;
+            valTemp.innerText = `${currentTemp}${config.chart1Title.includes("率")?"%":"°C"}`;
+            
+            if(progress > 0.5) {
+                barTemp.classList.remove('bg-red-500');
+                barTemp.classList.add('bg-brand-green');
+                valTemp.classList.remove('text-red-500');
+                valTemp.classList.add('text-brand-green');
+            } else {
+                barTemp.classList.add('bg-red-500');
+                barTemp.classList.remove('bg-brand-green');
+                valTemp.classList.add('text-red-500');
+                valTemp.classList.remove('text-brand-green');
             }
 
-            // Set dynamic titles
-            title1.innerHTML = `<i class="fa-solid fa-chart-line mr-2"></i>${chartTitle}`;
-            labelAfter.innerText = visualText;
-
-            if (isToggled) {
-                // Temp/Performance Chart
-                let widthPercent = 50; 
-                if(chartBase > 0) {
-                    widthPercent = (chartImprov / chartBase) * 100;
-                } else { // Special case for water (0 to 85%)
-                    widthPercent = chartImprov; 
-                }
-                
-                barTemp.style.width = `${widthPercent}%`;
-                barTemp.classList.replace('bg-red-500', 'bg-brand-green');
-                
-                let unit = (chartTitle.includes("溫度")) ? "°C" : "%";
-                valTemp.innerText = `${chartImprov}${unit}`;
-                valTemp.classList.replace('text-red-500', 'text-brand-green');
-
-                // Benefit Chart
-                barCarbon.style.width = '80%';
+            const barCarbon = document.getElementById('bar-carbon');
+            const valCarbon = document.getElementById('val-carbon');
+            
+            const currentBenefit = Math.floor(annualSaveVal * progress);
+            barCarbon.style.width = `${10 + (progress * 80)}%`; 
+            valCarbon.innerText = `${currentBenefit.toLocaleString()} ${config.benefitUnit}`;
+            
+            if(progress > 0.1) {
                 barCarbon.classList.remove('bg-slate-300');
                 barCarbon.classList.add('bg-brand-green');
-                valCarbon.innerText = `${annualBenefit.toLocaleString()} ${config.benefitUnit}`;
-                valCarbon.classList.add('text-brand-green');
+            } else {
+                barCarbon.classList.add('bg-slate-300');
+                barCarbon.classList.remove('bg-brand-green');
             }
         }
 
-        function toggleSimulation() {
-            const isChecked = document.getElementById('sim-toggle').checked;
-            const imgBefore = document.getElementById('img-before');
-            const imgAfter = document.getElementById('img-after');
-            const imgBadge = document.getElementById('img-badge');
-            const imgLabel = document.getElementById('img-label');
-            const visualLabelAfter = document.getElementById('visual-label-after');
+        // Auto Play Animation Fix
+        let autoPlayInterval;
+        function toggleAutoPlay() {
+            const checkbox = document.getElementById('sim-toggle');
+            const slider = document.getElementById('comparison-range');
             
-            // Fix: Toggle opacity classes based on checked state
-            if (isChecked) {
-                // Show After, Hide Before
-                imgAfter.classList.remove('opacity-0');
-                imgAfter.classList.add('opacity-100');
+            if (checkbox.checked) {
+                let val = parseInt(slider.value);
+                if(val >= 100) val = 0; 
                 
-                imgBefore.classList.remove('opacity-100');
-                imgBefore.classList.add('opacity-0');
-                
-                imgBadge.classList.replace('bg-white/90', 'bg-brand-green/90');
-                imgBadge.classList.replace('text-slate-700', 'text-white');
-                imgLabel.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i>模擬改善效果';
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = setInterval(() => {
+                    val += 1; // Slower speed for better view
+                    if (val >= 100) {
+                        val = 100;
+                        clearInterval(autoPlayInterval);
+                        // Optional: Uncheck when done or loop? Let's stop at 100 for clarity
+                    }
+                    updateSlider(val);
+                }, 30); 
             } else {
-                // Show Before, Hide After
-                imgAfter.classList.remove('opacity-100');
-                imgAfter.classList.add('opacity-0');
-                
-                imgBefore.classList.remove('opacity-0');
-                imgBefore.classList.add('opacity-100');
-                
-                imgBadge.classList.replace('bg-brand-green/90', 'bg-white/90');
-                imgBadge.classList.replace('text-white', 'text-slate-700');
-                imgLabel.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>原始風險狀態';
-                
-                // Reset Charts visual only (logic handled in updateCalculations)
-                document.getElementById('bar-temp').style.width = '95%';
-                document.getElementById('bar-temp').classList.replace('bg-brand-green', 'bg-red-500');
-                document.getElementById('val-temp').classList.replace('text-brand-green', 'text-red-500');
-                
-                document.getElementById('bar-carbon').style.width = '2%';
-                document.getElementById('bar-carbon').classList.remove('bg-brand-green');
-                document.getElementById('bar-carbon').classList.add('bg-slate-300');
+                clearInterval(autoPlayInterval);
             }
-            updateCalculations();
         }
 
         // Feature 3: Generate Document
         function generateSubsidyDoc() {
-            // Get user input for Org Name and Address
             const orgName = document.getElementById('sim-org-name').value || "申請單位未填寫";
             const address = document.getElementById('sim-address').value || "地址未填寫";
-            
             const area = document.getElementById('sim-area').value;
             const households = document.getElementById('sim-households').value;
             const type = document.getElementById('sim-type').value;
