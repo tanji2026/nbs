@@ -1,1 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="碳吉 TanJi - 社區氣候韌性與 NbS 決策平台">
+    <meta name="robots" content="noindex,nofollow">
+    <title>碳吉 TanJi - 社區微氣候韌性與 NbS 決策平台</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- docx.js & FileSaver.js -->
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#059669', // Emerald 600
+                            light: '#d1fae5', // Emerald 100
+                            dark: '#064e3b',  // Emerald 900
+                            blue: '#0ea5e9',  // Sky 500
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .hero-pattern {
+            background: linear-gradient(to bottom right, #f8fafc, #edf7f3);
+            opacity: 1;
+        }
+        /* Toggle Switch Styling Fix */
+        .toggle-checkbox {
+            transition: all 0.3s ease;
+        }
+        .toggle-checkbox:checked {
+            left: calc(100% - 2rem + 4px); /* Moves circle to right */
+            border-color: #059669;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #059669;
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #059669;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .bar-transition {
+            transition: width 0.3s ease-out, background-color 0.5s;
+        }
+        /* Map Container Fix */
+        #risk-map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+        /* Leaflet Control Layer Fix */
+        .leaflet-control-layers {
+            border: none !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            padding: 8px !important;
+        }
+        
+        /* Comparison Slider Styles */
+        .comparison-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f1f5f9;
+        }
+        .scene-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .scene-before {
+            z-index: 1;
+        }
+        .scene-after {
+            z-index: 2;
+            width: 50%; /* Default starting width */
+            border-right: 3px solid white;
+            background-color: #f1f5f9; /* Avoid transparency showing before layer */
+        }
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%; /* Sync with scene-after width */
+            width: 4px;
+            cursor: ew-resize;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; /* Let clicks pass through to input */
+        }
+        .slider-circle {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #059669;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            pointer-events: auto; /* Enable pointer events on handle */
+            border: 2px solid #059669;
+        }
+        /* Range input to control the slider */
+        #comparison-range {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: ew-resize;
+            z-index: 40; /* Top most for interaction */
+            margin: 0;
+        }
+        
+        /* SVG Styles */
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Selection Card Styles */
+        .select-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .select-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .select-card.active {
+            border-color: #059669;
+            background-color: #ecfdf5;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-800 antialiased bg-slate-50">
+
+    <!-- Navigation -->
+    <nav class="glass-nav fixed w-full z-50 top-0 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-green to-brand-blue rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <span class="font-bold text-2xl tracking-tight text-slate-800">碳吉 <span class="text-brand-green font-light">TanJi</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="text-slate-600 hover:text-brand-green font-medium transition">核心功能</a>
+                    <a href="#demo-scan" class="text-slate-600 hover:text-brand-green font-medium transition">風險快篩</a>
+                    <a href="#demo-sim" class="text-slate-600 hover:text-brand-green font-medium transition">效益模擬</a>
+                    <a href="#impact" class="text-slate-600 hover:text-brand-green font-medium transition">預期成果</a>
+                </div>
+                <div></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div class="absolute inset-0 hero-pattern -z-10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-8 leading-tight">
+                為您的社區穿上<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-brand-blue">綠色氣候防護衣</span>
+            </h1>
+            <p class="max-w-2xl mx-auto text-xl text-slate-600 mb-10 leading-relaxed">
+                社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，
+                協助管委會從「風險診斷」到「改造補助」一站式完成。
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="document.getElementById('demo-scan').scrollIntoView({behavior: 'smooth'})" class="px-8 py-4 bg-brand-green hover:bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg shadow-emerald-200 transition transform hover:scale-105 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass-location"></i>
+                    檢測我的社區
+                </button>
+            </div>
+            
+            <!-- Platform Concept Explainer -->
+            <div id="features" class="mt-16 relative mx-auto max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden bg-white">
+                <div class="bg-gradient-to-r from-slate-50 to-white p-8 md:p-12">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div class="w-full md:w-1/2 text-left space-y-6">
+                            <h3 class="text-2xl font-bold text-slate-800">TanJi 平台運作邏輯</h3>
+                            <p class="text-slate-600 text-lg">
+                                專為社區管委會設計的氣候調適數位助理。我們不只告訴您「哪裡熱」，更直接提供「怎麼解」的科學方案。
+                            </p>
+
+                            <ul class="space-y-4">
+                                <li class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fa-solid fa-database"></i></div>
+                                    <div><div class="font-bold text-slate-800">1. 數據匯流</div><div class="text-sm text-slate-500">串接氣象局與新北市GIS圖資</div></div>
+                                </li>
+                                <li class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                                    <div><div class="font-bold text-slate-800">2. 風險指認</div><div class="text-sm text-slate-500">AI 判讀都市熱島熱點與淹水潛勢</div></div>
+                                </li>
+                                <li class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-green"><i class="fa-solid fa-tree"></i></div>
+                                    <div><div class="font-bold text-slate-800">3. 自然解方 (NbS)</div><div class="text-sm text-slate-500">推薦適地適種的綠化與保水方案</div></div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="w-full md:w-1/2 bg-slate-100 rounded-xl p-6 relative">
+                            <div class="relative z-10 grid grid-cols-2 gap-4">
+                                <div class="bg-white p-4 rounded-lg shadow-sm text-center"><i class="fa-solid fa-cloud-rain text-3xl text-blue-500 mb-2"></i><div class="font-bold text-sm">氣候數據</div></div>
+                                <div class="bg-white p-4 rounded-lg shadow-sm text-center"><i class="fa-solid fa-building text-3xl text-slate-500 mb-2"></i><div class="font-bold text-sm">建築圖資</div></div>
+                                <div class="col-span-2 bg-brand-green text-white p-4 rounded-lg shadow-lg text-center transform scale-105">
+                                    <i class="fa-solid fa-microchip text-3xl mb-2"></i>
+                                    <div class="font-bold text-lg">TanJi AI 核心引擎</div>
+                                </div>
+                                <div class="col-span-2 bg-white p-4 rounded-lg shadow-sm text-center border-t-4 border-brand-green">
+                                    <div class="font-bold text-brand-dark">行動計畫書 (Action Plan)</div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] opacity-10"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo 1: Risk Scan -->
+    <section id="demo-scan" class="py-20 bg-slate-900 text-white relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-64 h-64 bg-brand-green rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div class="absolute bottom-0 right-0 w-64 h-64 bg-brand-blue rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+
+        <div class="max-w-4xl mx-auto px-4 relative z-10">
+            <div class="text-center mb-12">
+                <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 01</span>
+                <h2 class="text-3xl md:text-4xl font-bold mt-2">試試看：社區風險快篩</h2>
+                <p class="text-slate-400 mt-4">輸入新北市地址，體驗 AI 診斷流程</p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div class="flex-grow relative">
+                        <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址...">
+                    </div>
+                    <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
+                        <span id="btn-text">開始分析</span>
+                        <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
+                    </button>
+                </div>
+                
+                <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
+                    <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
+                        <div id="status-dot-ntpc" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：OpenStreetMap 定位服務
+                    </div>
+                    <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
+                        <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
+                    </div>
+                    <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
+                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 淹水潛勢圖
+                    </div>
+                </div>
+                
+                <div id="status-message" class="text-center text-sm text-brand-green font-mono h-6 mb-4 opacity-0 transition-opacity">
+                    正在連線至 API...
+                </div>
+
+                <div id="analysis-result" class="hidden transition-all duration-500 opacity-0 transform translate-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 真實互動地圖區塊 -->
+                        <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 shadow-inner">
+                            <div id="risk-map"></div>
+                            <!-- 覆蓋在地圖上的浮動標籤 -->
+                            <div class="absolute bottom-2 right-2 z-[999]">
+                                <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
+                                    <i class="fa-solid fa-layer-group mr-1"></i>OSM + NCDR
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-red-500/20 border border-red-500/50 p-4 rounded-xl flex items-start gap-4">
+                                <div class="bg-red-500 p-2 rounded-lg text-white"><i class="fa-solid fa-temperature-full"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-red-200" id="result-temp-title">即時高溫觀測</h4>
+                                    <p class="text-sm text-slate-300 mt-1" id="result-temp-desc">讀取中...</p>
+                                    <p class="text-xs text-slate-400 mt-1" id="api-debug-info"></p>
+                                </div>
+                            </div>
+                            <div class="bg-blue-500/20 border border-blue-500/50 p-4 rounded-xl flex items-start gap-4">
+                                <div class="bg-blue-500 p-2 rounded-lg text-white"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-blue-200" id="result-flood-title">排水負荷警示</h4>
+                                    <p class="text-sm text-slate-300 mt-1" id="result-flood-desc">短延時強降雨發生機率高，建議提升社區透水率。</p>
+                                </div>
+                            </div>
+                            <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
+                                <p class="font-bold text-white"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 選物店改善</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo 2: Simulator -->
+    <section id="demo-sim" class="py-20 bg-slate-50">
+        <!-- 修正寬度為 max-w-7xl，解決版面不對稱問題 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Layout: Visualizer on LEFT, Controls on RIGHT -->
+            <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
+                
+                <!-- Left: Visualizer (Modified: Clean Layout & Slider) -->
+                <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
+                    <!-- Comparison Slider Container -->
+                    <div class="comparison-container h-[500px] rounded-xl mb-8 relative border border-slate-200 group">
+                        
+                        <!-- SCENE BEFORE (Bottom Layer) -->
+                        <div class="scene-layer scene-before bg-slate-100" id="scene-before-container">
+                             <!-- Dynamic SVG content will be injected here -->
+                        </div>
+
+                        <!-- SCENE AFTER (Top Layer, Width Controlled by JS) -->
+                        <div id="scene-after" class="scene-layer scene-after bg-emerald-50">
+                            <div id="scene-after-container" class="w-full h-full">
+                                <!-- Dynamic SVG content will be injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Slider Controls -->
+                        <div id="slider-handle" class="slider-handle">
+                            <div class="slider-circle">
+                                <i class="fa-solid fa-arrows-left-right"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Invisible Range Input for Interaction -->
+                        <input type="range" min="0" max="100" value="50" id="comparison-range" oninput="updateSlider(this.value)">
+
+                        <!-- Badges -->
+                        <div class="absolute bottom-4 left-4 z-20 bg-white/90 text-slate-600 px-3 py-1 rounded text-xs font-bold shadow-sm border border-slate-200">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1"></i>改造前
+                        </div>
+                        <div class="absolute bottom-4 right-4 z-20 bg-brand-green/90 text-white px-3 py-1 rounded text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-check-circle mr-1"></i>改造後
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600" id="chart-title-1"><i class="fa-solid fa-temperature-high mr-2"></i>頂樓夏季表面溫度</span>
+                                <span id="val-temp" class="text-base font-bold text-red-500">55°C</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-temp" class="bg-red-500 h-6 rounded-full bar-transition shadow-sm relative transition-all duration-75" style="width: 95%">
+                                    <div class="absolute inset-0 bg-white/20 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-base font-bold text-slate-600" id="chart-title-2"><i class="fa-solid fa-bolt mr-2"></i>年效益評估</span>
+                                <span id="val-carbon" class="text-base font-bold text-slate-400">0</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-6 border border-slate-200 overflow-hidden">
+                                <div id="bar-carbon" class="bg-brand-green h-6 rounded-full bar-transition shadow-sm transition-all duration-75" style="width: 2%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Controls & Generation -->
+                <div class="w-full md:w-1/3 space-y-8">
+                    <div>
+                        <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
+                        <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 選物店</h2>
+                        <p class="text-slate-600 mt-4" id="sim-desc">
+                            從下方「選物區」挑選適合的解決方案，即時預覽氣候調適效益。
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                        
+                        <!-- 0. 申請單位資料 (NEW) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">申請單位 (社區全銜)</label>
+                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="如：XX社區管理委員會">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">社區地址</label>
+                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
+                        </div>
+
+                        <!-- 施作位置選擇 -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">施作位置 (切換場景)</label>
+                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
+                                <option value="rooftop">頂樓 (屋頂層)</option>
+                                <option value="facade">建築外牆 (立面)</option>
+                                <option value="ground">一樓中庭/開放空間</option>
+                            </select>
+                        </div>
+
+                        <!-- 1. 選物店卡片 (REPLACED DROPDOWN) -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-store text-brand-green mr-1"></i> 選物區：改造方案</label>
+                            <div class="grid grid-cols-1 gap-3" id="selection-shop-cards">
+                                <!-- NbS Card -->
+                                <div class="select-card active bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('nbs', this)">
+                                    <div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-green flex-shrink-0">
+                                        <i class="fa-solid fa-seedling"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">生物多樣性 (NbS)</div>
+                                        <div class="text-xs text-slate-500">綠屋頂、生態跳島</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+
+                                <!-- Water Card -->
+                                <div class="select-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('water', this)">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                        <i class="fa-solid fa-faucet-drip"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">水資源再利用</div>
+                                        <div class="text-xs text-slate-500">雨水貯留、透水磚</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+
+                                <!-- Insulation Card -->
+                                <div class="select-card bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('insulation', this)">
+                                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 flex-shrink-0">
+                                        <i class="fa-solid fa-sun"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">建築外殼節能</div>
+                                        <div class="text-xs text-slate-500">隔熱漆、隔熱磚</div>
+                                    </div>
+                                    <div class="ml-auto text-brand-green text-sm opacity-0 check-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                </div>
+                            </div>
+                            <!-- Hidden input to store value -->
+                            <input type="hidden" id="sim-type" value="nbs">
+                        </div>
+
+                        <!-- 2. 社區總戶數 -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">社區總戶數</label>
+                            <div class="relative">
+                                <input type="number" id="sim-households" value="200" oninput="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition font-mono text-lg text-right">
+                                <span class="absolute left-4 top-2.5 text-slate-400 text-sm"><i class="fa-solid fa-users"></i></span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1" id="household-type">中型社區 (補助上限20萬)</p>
+                        </div>
+
+                        <!-- 3. 輸入面積 -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">預計施作面積 (坪)</label>
+                            <div class="relative">
+                                <input type="number" id="sim-area" value="30" oninput="updateCalculations()" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition font-mono text-lg text-right">
+                                <span class="absolute left-4 top-2.5 text-slate-400 text-sm"><i class="fa-solid fa-ruler-combined"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- 4. 開關模擬 (改為自動演示按鈕) -->
+                        <div class="flex items-center justify-between">
+                             <span class="font-bold text-slate-700">自動演示效果</span>
+                            <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="sim-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer top-[-4px] left-[-4px]" onchange="toggleAutoPlay()"/>
+                                <label for="sim-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+
+                        <!-- 5. 即時經費試算 -->
+                        <div id="cost-preview" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm space-y-3 animate-pulse-fast" style="animation-iteration-count: 1;">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">預估總經費</span>
+                                <span class="font-bold text-slate-800 text-lg" id="val-total-cost">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-brand-green">
+                                <span><i class="fa-solid fa-hand-holding-dollar mr-1"></i> 政府補助</span>
+                                <span class="font-bold text-lg" id="val-subsidy">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center border-t border-slate-200 pt-3">
+                                <span class="text-slate-500">預估回收年限</span>
+                                <span class="font-bold text-slate-800" id="val-roi">-- 年</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button id="btn-generate" onclick="generateSubsidyDoc()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-file-signature"></i>
+                        一鍵生成改造補助計畫書
+                    </button>
+                    <p class="text-center text-xs text-slate-400 mt-2">* 自動填入新北市環保局格式表格</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="impact" class="bg-slate-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-leaf text-brand-green"></i>
+                        <span class="font-bold text-xl">碳吉 TanJi</span>
+                    </div>
+                    <p class="text-slate-400 text-sm">教育部 115 年度氣候變遷創意實作競賽參賽隊伍</p>
+                </div>
+                <!-- 已移除 GitHub 圖示與連結 -->
+                <div class="flex gap-6"></div>
+            </div>
+            <div class="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500 text-sm">
+                &copy; 2026 TanJi Project. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Scenes Data (Updated to handle [Location][Type] Matrix) ---
+        // Enhanced SVGs to look less ugly and match scenarios
+        const SCENES = {
+            rooftop: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e2e8f0" />
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#94a3b8" />
+                        <!-- Dirty/Hot Concrete Look -->
+                        <rect x="50" y="380" width="700" height="20" fill="#64748b" opacity="0.3"/>
+                        <rect x="100" y="300" width="100" height="100" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                        <circle cx="150" cy="350" r="30" fill="#94a3b8" opacity="0.5"/>
+                        <rect x="600" y="320" width="80" height="80" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                        <circle cx="640" cy="360" r="25" fill="#94a3b8" opacity="0.5"/>
+                        <!-- Blazing Sun -->
+                        <circle cx="720" cy="80" r="60" fill="#ef4444" opacity="0.2" />
+                        <circle cx="720" cy="80" r="40" fill="#ef4444" opacity="0.4" />
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle" font-weight="bold">高蓄熱水泥屋頂</text>
+                    </svg>`,
+                nbs: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#86efac" />
+                        <!-- Green Roof Layer -->
+                        <path d="M0 400 Q100 390 200 400 T400 400 T600 400 T800 400" fill="#4ade80" stroke="#16a34a" stroke-width="2"/>
+                        <!-- Plants -->
+                        <g transform="translate(100,380)"><circle r="20" fill="#166534"/><circle cy="-10" r="15" fill="#22c55e"/></g>
+                        <g transform="translate(250,390)"><rect width="10" height="30" fill="#78350f"/><circle cy="-10" r="30" fill="#15803d"/></g>
+                        <g transform="translate(500,380)"><circle r="25" fill="#166534"/><circle cx="10" cy="-10" r="20" fill="#4ade80"/></g>
+                        <g transform="translate(700,390)"><rect width="8" height="25" fill="#78350f"/><ellipse cx="0" cy="-15" rx="20" ry="30" fill="#15803d"/></g>
+                        <!-- Solar -->
+                        <path d="M300 320 L500 320 L480 380 L320 380 Z" fill="#1e293b" opacity="0.9"/>
+                        <rect x="330" y="325" width="140" height="50" fill="url(#solarGrid)" opacity="0.5"/>
+                        <defs><pattern id="solarGrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0 L0 0 L0 20" fill="none" stroke="white" stroke-width="1"/></pattern></defs>
+                        <circle cx="720" cy="80" r="50" fill="#fcd34d" />
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle" font-weight="bold">綠屋頂 + 太陽能</text>
+                    </svg>`,
+                water: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#cbd5e1" />
+                        <!-- Rainwater Harvesting Tanks -->
+                        <rect x="100" y="280" width="80" height="120" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2" rx="10"/>
+                        <rect x="200" y="280" width="80" height="120" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2" rx="10"/>
+                        <!-- Pipes -->
+                        <path d="M50 250 L140 250 L140 280" stroke="#94a3b8" stroke-width="5" fill="none"/>
+                        <path d="M180 300 L200 300" stroke="#64748b" stroke-width="5" fill="none"/>
+                        <!-- Potted Plants needing water -->
+                        <rect x="400" y="360" width="40" height="40" fill="#b45309"/>
+                        <circle cx="420" cy="360" r="25" fill="#16a34a"/>
+                        <rect x="500" y="360" width="40" height="40" fill="#b45309"/>
+                        <circle cx="520" cy="360" r="25" fill="#16a34a"/>
+                        <!-- Clouds -->
+                        <path d="M600 100 Q620 80 650 100 T700 100 T720 120" fill="white" opacity="0.8"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#1e40af" text-anchor="middle" font-weight="bold">雨水貯留系統</text>
+                    </svg>`,
+                insulation: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#dbeafe" /> <!-- Clearer Sky -->
+                        <path d="M0 400 L800 400 L800 600 L0 600 Z" fill="#e2e8f0" />
+                        <!-- Cool Roof Coating (Bright White) -->
+                        <rect x="0" y="400" width="800" height="20" fill="#ffffff"/>
+                        <polygon points="50,400 150,400 120,410 20,410" fill="#f8fafc"/>
+                        <polygon points="200,400 300,400 270,410 170,410" fill="#f8fafc"/>
+                        <!-- Insulation Tiles -->
+                        <rect x="50" y="405" width="700" height="195" fill="url(#tileGrid)" opacity="0.6"/>
+                        <defs><pattern id="tileGrid" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="48" height="48" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/></pattern></defs>
+                        <!-- Reflecting Sun Rays -->
+                        <path d="M200 380 L180 300" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5"/>
+                        <path d="M400 380 L380 300" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5"/>
+                        <path d="M600 380 L580 300" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#334155" text-anchor="middle" font-weight="bold">高效隔熱層</text>
+                    </svg>`
+            },
+            facade: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="200" y="50" width="400" height="550" fill="#94a3b8" />
+                        <!-- Standard Windows -->
+                        <rect x="250" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="100" width="80" height="100" fill="#475569" />
+                        <rect x="250" y="300" width="80" height="100" fill="#475569" />
+                        <rect x="470" y="300" width="80" height="100" fill="#475569" />
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#1e293b" text-anchor="middle" font-weight="bold">傳統建築立面</text>
+                    </svg>`,
+                nbs: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="200" y="50" width="400" height="550" fill="#f1f5f9" />
+                        <!-- Green Walls / Vertical Garden -->
+                        <rect x="220" y="50" width="360" height="550" fill="#86efac" opacity="0.3"/>
+                        <!-- Hanging Plants -->
+                        <path d="M220 100 Q240 180 220 260" stroke="#16a34a" stroke-width="8" fill="none"/>
+                        <path d="M580 100 Q560 180 580 260" stroke="#16a34a" stroke-width="8" fill="none"/>
+                        <path d="M300 50 L300 550" stroke="#22c55e" stroke-width="2" stroke-dasharray="10,5"/>
+                        <path d="M500 50 L500 550" stroke="#22c55e" stroke-width="2" stroke-dasharray="10,5"/>
+                        <circle cx="300" cy="150" r="15" fill="#15803d"/>
+                        <circle cx="500" cy="250" r="15" fill="#15803d"/>
+                        <circle cx="300" cy="400" r="20" fill="#16a34a"/>
+                        <!-- Windows (Cleaner) -->
+                        <rect x="250" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="100" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="250" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="470" y="300" width="80" height="100" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle" font-weight="bold">垂直綠化降溫</text>
+                    </svg>`,
+                water: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="200" y="50" width="400" height="550" fill="#f8fafc" />
+                        <!-- Rain Chains & Pipes -->
+                        <line x1="210" y1="50" x2="210" y2="550" stroke="#64748b" stroke-width="5"/>
+                        <line x1="590" y1="50" x2="590" y2="550" stroke="#64748b" stroke-width="5"/>
+                        <!-- Decorative Rain Chains -->
+                        <circle cx="210" cy="100" r="8" fill="#3b82f6"/>
+                        <circle cx="210" cy="150" r="8" fill="#3b82f6"/>
+                        <circle cx="210" cy="200" r="8" fill="#3b82f6"/>
+                        <!-- Base Planters/Tanks -->
+                        <rect x="180" y="500" width="60" height="50" fill="#475569"/>
+                        <rect x="560" y="500" width="60" height="50" fill="#475569"/>
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#1e40af" text-anchor="middle" font-weight="bold">立面雨水回收</text>
+                    </svg>`,
+                insulation: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <rect x="200" y="50" width="400" height="550" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+                        <!-- Shading Devices (Louvers) -->
+                        <g stroke="#94a3b8" stroke-width="4">
+                            <line x1="240" y1="90" x2="340" y2="90"/>
+                            <line x1="240" y1="120" x2="340" y2="120"/>
+                            <line x1="240" y1="150" x2="340" y2="150"/>
+                            <line x1="460" y1="90" x2="560" y2="90"/>
+                            <line x1="460" y1="120" x2="560" y2="120"/>
+                            <line x1="460" y1="150" x2="560" y2="150"/>
+                        </g>
+                        <!-- Windows with Low-E tint -->
+                        <rect x="250" y="100" width="80" height="100" fill="#93c5fd" opacity="0.5"/>
+                        <rect x="470" y="100" width="80" height="100" fill="#93c5fd" opacity="0.5"/>
+                        <rect x="250" y="300" width="80" height="100" fill="#93c5fd" opacity="0.5"/>
+                        <rect x="470" y="300" width="80" height="100" fill="#93c5fd" opacity="0.5"/>
+                        <text x="400" y="580" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle" font-weight="bold">遮陽與隔熱立面</text>
+                    </svg>`
+            },
+            ground: {
+                before: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#cbd5e1" />
+                        <rect x="0" y="300" width="800" height="300" fill="#64748b" />
+                        <ellipse cx="400" cy="500" rx="180" ry="60" fill="#475569" opacity="0.8"/> <!-- Puddle -->
+                        <line x1="200" y1="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="600" y1="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#e2e8f0" text-anchor="middle" font-weight="bold">不透水鋪面 (易積水)</text>
+                    </svg>`,
+                nbs: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <!-- Grass Ground -->
+                        <rect x="0" y="300" width="800" height="300" fill="#dcfce7" />
+                        <!-- Trees -->
+                        <rect x="140" y="380" width="20" height="150" fill="#78350f" />
+                        <circle cx="150" cy="350" r="70" fill="#16a34a" />
+                        <rect x="640" y="400" width="20" height="130" fill="#78350f" />
+                        <circle cx="650" cy="380" r="60" fill="#15803d" />
+                        <!-- Bushes -->
+                        <ellipse cx="300" cy="500" rx="40" ry="20" fill="#22c55e"/>
+                        <ellipse cx="500" cy="520" rx="50" ry="25" fill="#4ade80"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#065f46" text-anchor="middle" font-weight="bold">生態複層綠化</text>
+                    </svg>`,
+                water: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <!-- Permeable Pavement Pattern -->
+                        <defs>
+                            <pattern id="permGrid" width="40" height="20" patternUnits="userSpaceOnUse">
+                                <rect width="38" height="18" fill="#e2e8f0" stroke="#cbd5e1"/>
+                            </pattern>
+                        </defs>
+                        <rect x="0" y="300" width="800" height="300" fill="url(#permGrid)" />
+                        <!-- Rain Garden Depression -->
+                        <path d="M200 450 Q400 550 600 450" fill="#86efac" stroke="none"/>
+                        <!-- Plants in Rain Garden -->
+                        <g transform="translate(300,480)"><rect width="5" height="20" fill="brown"/><circle r="10" fill="green"/></g>
+                        <g transform="translate(400,500)"><rect width="5" height="20" fill="brown"/><circle r="15" fill="green"/></g>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#047857" text-anchor="middle" font-weight="bold">透水鋪面與雨水花園</text>
+                    </svg>`,
+                insulation: `
+                    <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="800" height="600" fill="#e0f2fe" />
+                        <!-- Light Colored Cool Pavement -->
+                        <rect x="0" y="300" width="800" height="300" fill="#f1f5f9" />
+                        <line x1="0" y1="350" x2="800" y2="350" stroke="#e2e8f0" stroke-width="2"/>
+                        <line x1="0" y1="450" x2="800" y2="450" stroke="#e2e8f0" stroke-width="2"/>
+                        <!-- Shade Structure -->
+                        <rect x="250" y="250" width="300" height="20" fill="#fcd34d"/>
+                        <rect x="260" y="270" width="10" height="200" fill="#94a3b8"/>
+                        <rect x="530" y="270" width="10" height="200" fill="#94a3b8"/>
+                        <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle" font-weight="bold">遮蔭與冷鋪面</text>
+                    </svg>`
+            }
+        };
+
+        // ... (Global Vars, Init Map, getMockTemp - Keep Same) ...
+        const COST_DB = {
+            "nbs": { 
+                title: "生物多樣性與綠化 (NbS)", 
+                cost: 25000, 
+                subsidyRate: 0.5, 
+                desc: "建置薄層綠屋頂與生態跳島，種植原生耐旱植栽。", 
+                benefitUnit: "度電 (空調節能)",
+                benefitFactor: 60, 
+                visualText: "導入綠屋頂後",
+                chart1Title: "頂樓夏季表面溫度",
+                chart1Base: 55, chart1Improv: 32
+            },
+            "water": { 
+                title: "水資源再利用 (雨水/透水)", 
+                cost: 15000, 
+                subsidyRate: 0.5, 
+                desc: "設置雨水貯留桶與透水鋪面，打造雨水花園。", 
+                benefitUnit: "度水 (節省自來水)",
+                benefitFactor: 30, 
+                visualText: "導入雨水回收後",
+                chart1Title: "暴雨逕流削減率",
+                chart1Base: 0, chart1Improv: 85
+            },
+            "insulation": { 
+                title: "建築外殼節能 (隔熱)", 
+                cost: 8000, 
+                subsidyRate: 0.4, 
+                desc: "塗佈高效隔熱漆或鋪設隔熱磚，阻絕熱能傳導。", 
+                benefitUnit: "度電 (空調節能)",
+                benefitFactor: 40,
+                visualText: "施作隔熱工程後",
+                chart1Title: "室內天花板溫度",
+                chart1Base: 42, chart1Improv: 36
+            }
+        };
+
+        const ELECTRICITY_RATE = 4.5; 
+        const WATER_RATE = 12; 
+
+        // Global Map Variable
+        let map = null;
+        let heatCircle = null;
+        let ncdrLayer = null; 
+        let osmLayer = null;  
+        let ncdrEmapLayer = null; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            map = L.map('risk-map').setView([25.012, 121.465], 11);
+            
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OSM contributors'
+            });
+            osmLayer.addTo(map);
+
+            ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
+                maxZoom: 20,
+                maxNativeZoom: 12, 
+                opacity: 0.8, 
+                attribution: 'NCDR 淹水潛勢圖',
+                zIndex: 1000 
+            });
+
+            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
+                maxZoom: 20,
+                maxNativeZoom: 15,
+                opacity: 1.0, 
+                attribution: 'NCDR 電子地圖',
+                zIndex: 500
+            });
+            
+            // Init Scene
+            renderScene();
+            // Init Selection Shop UI State (Default Select first one)
+            const firstCard = document.querySelector('.select-card');
+            if(firstCard) selectSolution('nbs', firstCard);
+        });
+
+        // ... (getMockTemp - KEEP SAME) ...
+        function getMockTemp() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            let temp = 25;
+            let risk = "";
+            let color = "";
+
+            if (month >= 11 || month <= 2) {
+                temp = (Math.random() * (22 - 16) + 16).toFixed(1);
+                risk = "溫度偏低，適合評估建築保溫效益。";
+                color = "#3b82f6";
+            } else if (month >= 6 && month <= 9) {
+                temp = (Math.random() * (36 - 30) + 30).toFixed(1);
+                risk = "高於區域平均，屬熱島效應高風險區。";
+                color = "#ef4444";
+            } else {
+                temp = (Math.random() * (28 - 22) + 22).toFixed(1);
+                risk = "氣候宜人，建議進行綠化維護。";
+                color = "#22c55e";
+            }
+            return { temp, risk, color };
+        }
+
+        async function startAnalysis() {
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
+            const resultDiv = document.getElementById('analysis-result');
+            const statusMsg = document.getElementById('status-message');
+            const cwaDot = document.getElementById('status-dot-cwa');
+            const ntpcDot = document.getElementById('status-dot-ntpc'); 
+            const ncdrDot = document.getElementById('status-dot-ncdr'); 
+            
+            let userInput = document.getElementById('address-input').value;
+
+            if (!userInput) {
+                alert("請輸入地址以進行分析！");
+                return;
+            }
+
+            // --- 修正: 強制台灣前綴 ---
+            let queryAddress = "台灣 " + userInput;
+
+            btnText.innerText = '分析中...';
+            btnLoader.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            statusMsg.classList.remove('opacity-0');
+            statusMsg.innerText = "正在連線 GIS 定位伺服器...";
+            
+            ntpcDot.classList.remove('bg-brand-green', 'animate-ping');
+            cwaDot.classList.remove('bg-brand-green', 'animate-ping');
+            ncdrDot.classList.remove('bg-brand-green', 'animate-ping');
+            ntpcDot.classList.add('bg-slate-500');
+            cwaDot.classList.add('bg-slate-500');
+            ncdrDot.classList.add('bg-slate-500');
+
+            ntpcDot.classList.replace('bg-slate-500', 'bg-brand-green');
+            ntpcDot.classList.add('animate-ping');
+
+            try {
+                const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
+                let geoData = null;
+                let locationName = userInput;
+
+                try {
+                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent(queryAddress)}`);
+                    if (geoRes.ok) {
+                        geoData = await geoRes.json();
+                        locationName = geoData.name;
+                    } else {
+                        throw new Error("Backend geocode failed");
+                    }
+                } catch (backendErr) {
+                    console.warn("後端定位失敗，嘗試前端直連 OSM...", backendErr);
+                    const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryAddress)}&format=json&limit=1`);
+                    if (osmRes.ok) {
+                        const osmRaw = await osmRes.json();
+                        if (osmRaw && osmRaw.length > 0) {
+                            geoData = { lat: parseFloat(osmRaw[0].lat), lng: parseFloat(osmRaw[0].lon), name: osmRaw[0].display_name };
+                            locationName = geoData.name;
+                        }
+                    }
+                }
+
+                if (!geoData) throw new Error("地址定位失敗");
+                if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
+                    statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
+                }
+
+                const locationData = { lat: geoData.lat, lng: geoData.lng, name: locationName };
+                ntpcDot.classList.remove('animate-ping'); 
+                
+                statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象中...`;
+                cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                cwaDot.classList.add('animate-ping');
+
+                const weatherRes = await fetch(`${backendUrl}/api/weather`);
+                if (!weatherRes.ok) throw new Error("氣象連線失敗");
+                const weatherRaw = await weatherRes.json();
+                
+                let weatherData = null;
+                if (weatherRaw.records && weatherRaw.records.Station) {
+                    let minDist = Infinity;
+                    let nearestStation = weatherRaw.records.Station[0];
+                    weatherRaw.records.Station.forEach(s => {
+                        const dist = Math.sqrt(Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2));
+                        if (dist < minDist) { minDist = dist; nearestStation = s; }
+                    });
+                    weatherData = {
+                        temp: nearestStation.WeatherElement.AirTemperature,
+                        risk: `觀測站：${nearestStation.StationName} (距離 ${(minDist*111).toFixed(1)}km)`,
+                        color: nearestStation.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
+                        source: "Real API"
+                    };
+                }
+
+                cwaDot.classList.remove('animate-ping');
+                statusMsg.innerText = "正在載入 NCDR 災害圖資...";
+                ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
+                ncdrDot.classList.add('animate-ping');
+                await new Promise(r => setTimeout(r, 800));
+
+                const now = new Date();
+                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                ncdrDot.classList.remove('animate-ping');
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                
+                if(map) {
+                    map.invalidateSize();
+                    map.flyTo([locationData.lat, locationData.lng], 15); 
+                    if(heatCircle) map.removeLayer(heatCircle);
+                    heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
+                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
+                    if(ncdrEmapLayer && ncdrLayer) {
+                        ncdrEmapLayer.addTo(map);
+                        setTimeout(() => { map.removeLayer(ncdrEmapLayer); ncdrLayer.addTo(map); }, 3000);
+                    }
+                }
+
+                statusMsg.innerText = "分析完成！圖層已疊加";
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
+                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
+                document.getElementById('result-flood-desc').innerText = `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
+                if(userInput) { document.getElementById('sim-address').value = userInput; }
+            } catch (e) {
+                console.error(e);
+                alert("連線異常或無法定位，切換至備援模式。");
+                const mock = getMockTemp();
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                statusMsg.innerText = "分析完成 (模擬數據模式)";
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
+                document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
+            }
+        }
+
+        // --- NEW: Render Scene Logic ---
+        function renderScene() {
+            const loc = document.getElementById('sim-location').value || 'rooftop';
+            const type = document.getElementById('sim-type').value || 'nbs';
+            const sceneData = SCENES[loc];
+            
+            if(sceneData) {
+                document.getElementById('scene-before-container').innerHTML = sceneData.before;
+                // Dynamically select the AFTER scene based on selected solution type
+                document.getElementById('scene-after-container').innerHTML = sceneData[type] || sceneData.nbs; // Fallback to NbS if undefined
+            }
+        }
+
+        // New Selection Logic
+        function selectSolution(type, cardElement) {
+            // Update hidden input
+            document.getElementById('sim-type').value = type;
+            
+            // UI Update
+            document.querySelectorAll('.select-card').forEach(el => {
+                el.classList.remove('active', 'bg-emerald-50', 'border-brand-green');
+                el.classList.add('bg-slate-50', 'border-slate-200');
+                el.querySelector('.check-icon').classList.add('opacity-0');
+            });
+            
+            cardElement.classList.remove('bg-slate-50', 'border-slate-200');
+            cardElement.classList.add('active', 'bg-emerald-50', 'border-brand-green');
+            cardElement.querySelector('.check-icon').classList.remove('opacity-0');
+
+            // Trigger scene update and calc
+            renderScene();
+            updateCalculations();
+        }
+
+        // New Slider Logic
+        function updateSlider(val) {
+            document.getElementById('scene-after').style.width = val + '%';
+            document.getElementById('slider-handle').style.left = val + '%';
+            updateCalculations(val);
+        }
+
+        // Feature 2: Simulation Logic (Updated for Slider)
+        function updateCalculations(sliderVal = 0) {
+            const isToggled = document.getElementById('sim-toggle').checked;
+            let progress = 0;
+            
+            if (typeof sliderVal === 'number' || typeof sliderVal === 'string') {
+                 progress = parseInt(sliderVal) / 100;
+                 if(progress > 0.9) document.getElementById('sim-toggle').checked = true;
+                 if(progress < 0.1) document.getElementById('sim-toggle').checked = false;
+            } else {
+                 progress = isToggled ? 1 : 0;
+                 // Update slider visually if toggled via checkbox/auto
+                 document.getElementById('comparison-range').value = progress * 100;
+                 document.getElementById('scene-after').style.width = (progress * 100) + '%';
+                 document.getElementById('slider-handle').style.left = (progress * 100) + '%';
+            }
+
+            const area = parseInt(document.getElementById('sim-area').value) || 0;
+            const households = parseInt(document.getElementById('sim-households').value) || 0;
+            const type = document.getElementById('sim-type').value;
+            const config = COST_DB[type];
+
+            // Subsidy Logic
+            let maxSubsidy = 300000;
+            if (households < 150) maxSubsidy = 100000;
+            else if (households < 300) maxSubsidy = 200000;
+
+            const costPreview = document.getElementById('cost-preview');
+            const generateBtn = document.getElementById('btn-generate');
+
+            if (progress > 0.1) {
+                costPreview.classList.remove('hidden');
+                generateBtn.disabled = false;
+            } else {
+                 if(progress === 0) {
+                    costPreview.classList.add('hidden');
+                    generateBtn.disabled = true;
+                 }
+            }
+
+            // Calculation
+            const totalCost = area * config.cost;
+            let subsidy = Math.floor(totalCost * config.subsidyRate);
+            if (subsidy > maxSubsidy) subsidy = maxSubsidy;
+
+            let annualSaveVal = area * config.benefitFactor;
+            let annualMoneySave = (type === 'water') ? annualSaveVal * WATER_RATE : annualSaveVal * ELECTRICITY_RATE;
+            const roi = annualMoneySave > 0 ? ((totalCost - subsidy) / annualMoneySave).toFixed(1) : "N/A";
+
+            document.getElementById('val-total-cost').innerText = `NT$ ${totalCost.toLocaleString()}`;
+            document.getElementById('val-subsidy').innerText = `NT$ ${subsidy.toLocaleString()}`;
+            document.getElementById('val-roi').innerText = `${roi} 年`;
+
+            const chartBase = config.chart1Base;
+            const chartImprov = config.chart1Improv;
+            const currentTemp = (chartBase - ((chartBase - chartImprov) * progress)).toFixed(1);
+            
+            const barTemp = document.getElementById('bar-temp');
+            const valTemp = document.getElementById('val-temp');
+            
+            const tempPercent = (currentTemp / 60) * 100; 
+            barTemp.style.width = `${tempPercent}%`;
+            valTemp.innerText = `${currentTemp}${config.chart1Title.includes("率")?"%":"°C"}`;
+            
+            if(progress > 0.5) {
+                barTemp.classList.remove('bg-red-500');
+                barTemp.classList.add('bg-brand-green');
+                valTemp.classList.remove('text-red-500');
+                valTemp.classList.add('text-brand-green');
+            } else {
+                barTemp.classList.add('bg-red-500');
+                barTemp.classList.remove('bg-brand-green');
+                valTemp.classList.add('text-red-500');
+                valTemp.classList.remove('text-brand-green');
+            }
+
+            const barCarbon = document.getElementById('bar-carbon');
+            const valCarbon = document.getElementById('val-carbon');
+            
+            const currentBenefit = Math.floor(annualSaveVal * progress);
+            barCarbon.style.width = `${10 + (progress * 80)}%`; 
+            valCarbon.innerText = `${currentBenefit.toLocaleString()} ${config.benefitUnit}`;
+            
+            if(progress > 0.1) {
+                barCarbon.classList.remove('bg-slate-300');
+                barCarbon.classList.add('bg-brand-green');
+            } else {
+                barCarbon.classList.add('bg-slate-300');
+                barCarbon.classList.remove('bg-brand-green');
+            }
+        }
+
+        // Auto Play Animation Fix
+        let autoPlayInterval;
+        function toggleAutoPlay() {
+            const checkbox = document.getElementById('sim-toggle');
+            const slider = document.getElementById('comparison-range');
+            
+            if (checkbox.checked) {
+                let val = parseInt(slider.value);
+                if(val >= 100) val = 0; 
+                
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = setInterval(() => {
+                    val += 1; 
+                    if (val >= 100) {
+                        val = 100;
+                        clearInterval(autoPlayInterval);
+                    }
+                    slider.value = val; // 重要：更新 input 值
+                    updateSlider(val); // 更新視覺
+                }, 30); 
+            } else {
+                clearInterval(autoPlayInterval);
+            }
+        }
+
+        // Feature 3: Generate Document
+        function generateSubsidyDoc() {
+            const orgName = document.getElementById('sim-org-name').value || "申請單位未填寫";
+            const address = document.getElementById('sim-address').value || "地址未填寫";
+            const area = document.getElementById('sim-area').value;
+            const households = document.getElementById('sim-households').value;
+            const type = document.getElementById('sim-type').value;
+            const locationSelect = document.getElementById('sim-location');
+            const locationText = locationSelect.options[locationSelect.selectedIndex].text;
+            const config = COST_DB[type];
+            
+            const totalCostStr = document.getElementById('val-total-cost').innerText;
+            const subsidyStr = document.getElementById('val-subsidy').innerText;
+            const roiStr = document.getElementById('val-roi').innerText;
+            const benefitStr = document.getElementById('val-carbon').innerText;
+
+            const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
+            
+            const cellStyle = {
+                borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                },
+            };
+
+            const doc = new Document({
+                sections: [{
+                    children: [
+                        new Paragraph({ text: "114年度新北市低碳社區改造補助計畫申請表", heading: docx.HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(orgName)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區地址", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區戶數", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(households + " 戶")], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(`${config.title} - ${locationText}`)], ...cellStyle }) ]}),
+                            ]
+                        }),
+                        new Paragraph({ text: "\n一、改善方式與現況", heading: docx.HeadingLevel.HEADING_2 }),
+                        new Paragraph({ text: `${config.desc} 預計施作位置為 ${locationText}，面積約 ${area} 坪。` }),
+                        new Paragraph({ text: "\n二、經費與效益", heading: docx.HeadingLevel.HEADING_2 }),
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("預估總經費")], ...cellStyle }), new TableCell({ children: [new Paragraph(totalCostStr)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("申請補助")], ...cellStyle }), new TableCell({ children: [new Paragraph(subsidyStr)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("預估效益")], ...cellStyle }), new TableCell({ children: [new Paragraph(benefitStr)], ...cellStyle }) ]}),
+                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("回收年限")], ...cellStyle }), new TableCell({ children: [new Paragraph(roiStr)], ...cellStyle }) ]}),
+                            ]
+                        }),
+                        new Paragraph({ text: "\n※ 由 TanJi 平台自動生成。", alignment: AlignmentType.CENTER, color: "888888" })
+                    ]
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => saveAs(blob, `${orgName}_改造計畫書.docx`));
+        }
+    </script>
+</body>
+</html>
