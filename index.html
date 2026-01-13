@@ -95,15 +95,28 @@
             height: 100%;
             width: 100%;
             z-index: 1;
+            background: #e2e8f0; /* Default bg if map fails */
         }
-        /* Leaflet Control Layer Fix */
-        .leaflet-control-layers {
-            border: none !important;
-            border-radius: 0.5rem !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-size: 14px;
-            padding: 8px !important;
+        /* Image Viewer Styles */
+        .map-viewer-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: auto; /* Allow scrolling if image is large */
+            background-color: #334155;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-viewer-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+        .map-viewer-container:hover img {
+            /* Optional: Simple zoom on hover or click could be added here */
         }
         
         /* Comparison Slider Styles */
@@ -285,14 +298,15 @@
         <div class="absolute top-0 left-0 w-64 h-64 bg-brand-green rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
         <div class="absolute bottom-0 right-0 w-64 h-64 bg-brand-blue rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
-        <div class="max-w-4xl mx-auto px-4 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
             <div class="text-center mb-12">
                 <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 01</span>
                 <h2 class="text-3xl md:text-4xl font-bold mt-2">試試看：社區風險快篩</h2>
-                <p class="text-slate-400 mt-4">輸入新北市地址，體驗 AI 診斷流程</p>
+                <p class="text-slate-400 mt-4">輸入新北市地址，即時診斷氣候風險</p>
             </div>
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+                <!-- Address Bar -->
                 <div class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
@@ -312,7 +326,7 @@
                         <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
                     </div>
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 淹水潛勢 (圖檔模式)
+                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 資料來源：NCDR 淹水潛勢圖資
                     </div>
                 </div>
                 
@@ -320,36 +334,28 @@
                     正在連線至 API...
                 </div>
 
+                <!-- Analysis Result: SPLIT VIEW -->
                 <div id="analysis-result" class="hidden transition-all duration-500 opacity-0 transform translate-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 真實互動地圖區塊 -->
-                        <div class="flex flex-col gap-2">
-                            <!-- 圖層控制列 -->
-                            <div class="bg-slate-800 border border-slate-700 p-3 rounded-xl flex flex-col gap-2 shadow-inner">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-xs text-slate-400 font-bold"><i class="fa-solid fa-water mr-1"></i>淹水情境模擬：</label>
-                                    <span class="text-xs text-slate-500" id="opacity-label">透明度 70%</span>
-                                </div>
-                                <div class="flex gap-2 items-center">
-                                    <select id="flood-scenario-select" onchange="updateFloodLayer(this.value)" class="bg-slate-700 text-white text-xs p-2 rounded flex-grow outline-none border border-slate-600 focus:border-brand-green">
-                                        <!-- Options injected by JS -->
-                                    </select>
-                                    <input type="range" id="opacity-slider" min="0" max="100" value="70" class="w-20 accent-brand-green cursor-pointer" oninput="updateFloodOpacity(this.value)">
-                                </div>
-                            </div>
-                            
-                            <!-- 地圖本體 -->
-                            <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 shadow-inner z-0">
-                                <div id="risk-map"></div>
-                                <div class="absolute bottom-2 right-2 z-[999]">
-                                    <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
-                                        <i class="fa-solid fa-layer-group mr-1"></i>OSM + 圖檔疊加
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         
-                        <div class="space-y-4">
+                        <!-- Left Col: Location Map & Weather -->
+                        <div class="flex flex-col gap-4">
+                            <div class="bg-slate-800/50 border border-slate-700 p-4 rounded-xl">
+                                <h3 class="font-bold text-white mb-3 flex items-center">
+                                    <i class="fa-solid fa-map-location-dot text-brand-blue mr-2"></i>基地定位
+                                </h3>
+                                <!-- Map Container -->
+                                <div class="bg-slate-800 rounded-xl overflow-hidden h-72 relative border border-slate-700 shadow-inner z-0">
+                                    <div id="risk-map"></div>
+                                    <div class="absolute bottom-2 right-2 z-[999]">
+                                        <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
+                                            OpenStreetMap
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weather Card -->
                             <div class="bg-red-500/20 border border-red-500/50 p-4 rounded-xl flex items-start gap-4">
                                 <div class="bg-red-500 p-2 rounded-lg text-white"><i class="fa-solid fa-temperature-full"></i></div>
                                 <div>
@@ -358,18 +364,57 @@
                                     <p class="text-xs text-slate-400 mt-1" id="api-debug-info"></p>
                                 </div>
                             </div>
-                            <div class="bg-blue-500/20 border border-blue-500/50 p-4 rounded-xl flex items-start gap-4">
-                                <div class="bg-blue-500 p-2 rounded-lg text-white"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
-                                <div>
-                                    <h4 class="font-bold text-blue-200" id="result-flood-title">淹水潛勢分析</h4>
-                                    <p class="text-sm text-slate-300 mt-1" id="result-flood-desc">請選擇左側「淹水情境」以模擬不同降雨條件下的風險。</p>
+                        </div>
+                        
+                        <!-- Right Col: Flood Map Viewer (Standalone) -->
+                        <div class="flex flex-col gap-4">
+                            <div class="bg-slate-800/50 border border-slate-700 p-4 rounded-xl h-full flex flex-col">
+                                <h3 class="font-bold text-white mb-3 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-layer-group text-blue-400 mr-2"></i>淹水潛勢圖資檢視</span>
+                                    <span class="text-xs text-slate-400 font-normal border border-slate-600 px-2 py-0.5 rounded">原始圖檔模式</span>
+                                </h3>
+                                
+                                <!-- Scenario Control -->
+                                <div class="mb-3">
+                                    <label class="text-xs text-slate-400 block mb-1">選擇降雨情境：</label>
+                                    <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-sm p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
+                                        <!-- Options injected by JS -->
+                                    </select>
                                 </div>
-                            </div>
-                            <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
-                                <p class="font-bold text-white"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 選物店改善</p>
+
+                                <!-- Image Viewer -->
+                                <div class="map-viewer-container flex-grow bg-slate-900 border border-slate-700 relative group">
+                                    <img id="flood-image-viewer" src="" alt="請選擇情境" class="block">
+                                    
+                                    <!-- Missing File State -->
+                                    <div id="image-error-msg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 hidden bg-slate-800">
+                                        <i class="fa-regular fa-image-slash text-4xl mb-2"></i>
+                                        <p class="text-sm">找不到圖檔</p>
+                                        <p class="text-xs mt-1">請確認 jpg 檔案位於同一目錄</p>
+                                    </div>
+
+                                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition duration-300">
+                                        <a id="download-map-btn" href="#" download class="bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded text-xs backdrop-blur-sm">
+                                            <i class="fa-solid fa-download mr-1"></i>下載此圖
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-xs text-slate-400 mt-2 text-center">
+                                    * 圖資來源：國家災害防救科技中心 (NCDR)
+                                </p>
                             </div>
                         </div>
+
                     </div>
+                    
+                    <!-- CTA -->
+                    <div class="mt-8 flex justify-center">
+                        <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition w-full md:w-auto px-12 shadow-lg shadow-emerald-900/20" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
+                            <p class="font-bold text-white text-lg"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 選物店改善</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -814,9 +859,6 @@
             '24H650R': { file: '新北24H650R.jpg', name: '24小時 650mm (超大豪雨)' }
         };
 
-        // 新北市大致邊界 (需要微調)
-        const imageBounds = [[24.673, 121.282], [25.299, 122.005]];
-
         // ... (Global Vars, Init Map, getMockTemp - Keep Same) ...
         const COST_DB = {
             "nbs": { 
@@ -847,7 +889,7 @@
                 subsidyRate: 0.4, 
                 desc: "塗佈高效隔熱漆或鋪設隔熱磚，阻絕熱能傳導。", 
                 benefitUnit: "度電 (空調節能)",
-                benefitFactor: 40,
+                benefitFactor: 40, 
                 visualText: "施作隔熱工程後",
                 chart1Title: "室內天花板溫度",
                 chart1Base: 42, chart1Improv: 36
@@ -860,11 +902,11 @@
         // Global Map Variable
         let map = null;
         let heatCircle = null;
-        let currentFloodLayer = null; // New: storage for current image overlay
+        // Removed currentFloodLayer - no longer needed
 
         document.addEventListener('DOMContentLoaded', () => {
             // Version Check Log
-            console.log("TanJi Platform v2.1 - Image Overlay Mode Loaded");
+            console.log("TanJi Platform v2.3 - Split View Loaded");
 
             // Init map logic
             map = L.map('risk-map').setView([25.012, 121.465], 11);
@@ -873,7 +915,7 @@
                 attribution: '&copy; OSM contributors'
             }).addTo(map);
 
-            // Populate Dropdown
+            // Populate Dropdown for Image Viewer
             const select = document.getElementById('flood-scenario-select');
             select.innerHTML = ''; // clear
             let defaultKey = '24H350R';
@@ -885,6 +927,9 @@
                 select.appendChild(opt);
             });
 
+            // Init Image Viewer
+            updateFloodImage(defaultKey);
+
             // Init Scene
             renderScene();
             // Init Selection Shop UI State (Default Select first one)
@@ -892,37 +937,29 @@
             if(firstCard) selectSolution('nbs', firstCard);
         });
 
-        // Update Flood Layer Logic
-        function updateFloodLayer(key) {
-            if (currentFloodLayer) {
-                map.removeLayer(currentFloodLayer);
-            }
-
+        // --- NEW: Flood Image Viewer Logic ---
+        function updateFloodImage(key) {
             const data = FLOOD_DATA[key];
             if (!data) return;
 
             const imageUrl = IMAGE_PATH + data.file;
-            const opacity = document.getElementById('opacity-slider').value / 100;
+            const imgViewer = document.getElementById('flood-image-viewer');
+            const errorMsg = document.getElementById('image-error-msg');
+            const downloadBtn = document.getElementById('download-map-btn');
 
-            // Use L.imageOverlay
-            currentFloodLayer = L.imageOverlay(imageUrl, imageBounds, {
-                opacity: opacity,
-                interactive: true
-            }).addTo(map);
+            // Reset state
+            imgViewer.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+            
+            // Set new src
+            imgViewer.src = imageUrl;
+            downloadBtn.href = imageUrl;
 
-            // Update description text
-            const desc = document.getElementById('result-flood-desc');
-            if(desc) {
-                desc.innerHTML = `情境：<span class="text-white font-bold">${data.name}</span><br>請縮放地圖檢視紅色積水區塊。`;
-            }
-        }
-
-        // Update Opacity
-        function updateFloodOpacity(val) {
-            if (currentFloodLayer) {
-                currentFloodLayer.setOpacity(val / 100);
-            }
-            document.getElementById('opacity-label').innerText = `透明度 ${val}%`;
+            // Simple error handling
+            imgViewer.onerror = function() {
+                imgViewer.classList.add('hidden');
+                errorMsg.classList.remove('hidden');
+            };
         }
 
 
@@ -1047,8 +1084,8 @@
                 ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 ncdrDot.classList.add('animate-ping');
                 
-                // --- NEW LOGIC START: Load Local Image ---
-                await new Promise(r => setTimeout(r, 800)); // Fake loading
+                // --- Fake Loading for Data ---
+                await new Promise(r => setTimeout(r, 800)); 
 
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
@@ -1057,18 +1094,17 @@
                 
                 if(map) {
                     map.invalidateSize();
-                    map.flyTo([locationData.lat, locationData.lng], 14); // Zoom level 14 is good for flood map
+                    map.flyTo([locationData.lat, locationData.lng], 15); // Zoom level 15 for better street view
                     if(heatCircle) map.removeLayer(heatCircle);
                     heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
                     L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
-                    
-                    // Trigger default flood layer
-                    const select = document.getElementById('flood-scenario-select');
-                    updateFloodLayer(select.value);
                 }
-                // --- NEW LOGIC END ---
+                
+                // Trigger Image Update (Reset to default or keep current)
+                const select = document.getElementById('flood-scenario-select');
+                updateFloodImage(select.value);
 
-                statusMsg.innerText = "分析完成！圖層已疊加";
+                statusMsg.innerText = "分析完成！圖資已載入";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
                 
@@ -1084,10 +1120,11 @@
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
-                // Also load image in mock mode
+                // Load map in mock mode
                 if(map) {
-                    const select = document.getElementById('flood-scenario-select');
-                    updateFloodLayer(select.value);
+                     map.invalidateSize();
+                     const select = document.getElementById('flood-scenario-select');
+                     updateFloodImage(select.value);
                 }
             }
         }
