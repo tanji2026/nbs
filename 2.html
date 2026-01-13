@@ -312,7 +312,7 @@
                         <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
                     </div>
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 淹水潛勢圖
+                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：NCDR 淹水潛勢
                     </div>
                 </div>
                 
@@ -323,13 +323,29 @@
                 <div id="analysis-result" class="hidden transition-all duration-500 opacity-0 transform translate-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- 真實互動地圖區塊 -->
-                        <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 shadow-inner">
-                            <div id="risk-map"></div>
-                            <!-- 覆蓋在地圖上的浮動標籤 -->
-                            <div class="absolute bottom-2 right-2 z-[999]">
-                                <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
-                                    <i class="fa-solid fa-layer-group mr-1"></i>OSM + NCDR
-                                </span>
+                        <div class="flex flex-col gap-2">
+                            <!-- 圖層控制列 -->
+                            <div class="bg-slate-800 border border-slate-700 p-3 rounded-xl flex flex-col gap-2 shadow-inner">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs text-slate-400 font-bold"><i class="fa-solid fa-water mr-1"></i>淹水情境模擬：</label>
+                                    <span class="text-xs text-slate-500" id="opacity-label">透明度 70%</span>
+                                </div>
+                                <div class="flex gap-2 items-center">
+                                    <select id="flood-scenario-select" onchange="updateFloodLayer(this.value)" class="bg-slate-700 text-white text-xs p-2 rounded flex-grow outline-none border border-slate-600 focus:border-brand-green">
+                                        <!-- Options injected by JS -->
+                                    </select>
+                                    <input type="range" id="opacity-slider" min="0" max="100" value="70" class="w-20 accent-brand-green cursor-pointer" oninput="updateFloodOpacity(this.value)">
+                                </div>
+                            </div>
+                            
+                            <!-- 地圖本體 -->
+                            <div class="bg-slate-800 rounded-xl overflow-hidden h-64 relative border border-slate-700 shadow-inner z-0">
+                                <div id="risk-map"></div>
+                                <div class="absolute bottom-2 right-2 z-[999]">
+                                    <span class="bg-white/90 text-slate-800 px-2 py-1 rounded text-[10px] font-bold shadow">
+                                        <i class="fa-solid fa-layer-group mr-1"></i>OSM + 圖檔疊加
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         
@@ -345,8 +361,8 @@
                             <div class="bg-blue-500/20 border border-blue-500/50 p-4 rounded-xl flex items-start gap-4">
                                 <div class="bg-blue-500 p-2 rounded-lg text-white"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
                                 <div>
-                                    <h4 class="font-bold text-blue-200" id="result-flood-title">排水負荷警示</h4>
-                                    <p class="text-sm text-slate-300 mt-1" id="result-flood-desc">短延時強降雨發生機率高，建議提升社區透水率。</p>
+                                    <h4 class="font-bold text-blue-200" id="result-flood-title">淹水潛勢分析</h4>
+                                    <p class="text-sm text-slate-300 mt-1" id="result-flood-desc">請選擇左側「淹水情境」以模擬不同降雨條件下的風險。</p>
                                 </div>
                             </div>
                             <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
@@ -730,8 +746,8 @@
                         <rect width="800" height="600" fill="#cbd5e1" />
                         <rect x="0" y="300" width="800" height="300" fill="#64748b" />
                         <ellipse cx="400" cy="500" rx="180" ry="60" fill="#475569" opacity="0.8"/> <!-- Puddle -->
-                        <line x1="200" y1="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
-                        <line x1="600" y1="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="200" y="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="600" y="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
                         <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#e2e8f0" text-anchor="middle" font-weight="bold">不透水鋪面 (易積水)</text>
                     </svg>`,
                 nbs: `
@@ -782,6 +798,25 @@
             }
         };
 
+        // --- NEW: Flood Image Data ---
+        // 路徑預設為 ./ (同一層資料夾)，若您有 images 資料夾請改為 './images/'
+        const IMAGE_PATH = './'; 
+        const FLOOD_DATA = {
+            '6H150R': { file: '新北6H150R.jpg', name: '6小時 150mm (短延時強降雨)' },
+            '6H250R': { file: '新北6H250R.jpg', name: '6小時 250mm' },
+            '6H350R': { file: '新北6H350R.jpg', name: '6小時 350mm (極端)' },
+            '12H200R': { file: '新北12H200R.jpg', name: '12小時 200mm' },
+            '12H300R': { file: '新北12H300R.jpg', name: '12小時 300mm' },
+            '12H400R': { file: '新北12H400R.jpg', name: '12小時 400mm' },
+            '24H200R': { file: '新北24H200R.jpg', name: '24小時 200mm' },
+            '24H350R': { file: '新北24H350R.jpg', name: '24小時 350mm (納莉颱風等級)' },
+            '24H500R': { file: '新北24H500R.jpg', name: '24小時 500mm (莫拉克等級)' },
+            '24H650R': { file: '新北24H650R.jpg', name: '24小時 650mm (超大豪雨)' }
+        };
+
+        // 新北市大致邊界 (需要微調)
+        const imageBounds = [[24.673, 121.282], [25.299, 122.005]];
+
         // ... (Global Vars, Init Map, getMockTemp - Keep Same) ...
         const COST_DB = {
             "nbs": { 
@@ -825,40 +860,68 @@
         // Global Map Variable
         let map = null;
         let heatCircle = null;
-        let ncdrLayer = null; 
-        let osmLayer = null;  
-        let ncdrEmapLayer = null; 
+        let currentFloodLayer = null; // New: storage for current image overlay
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Init map logic
             map = L.map('risk-map').setView([25.012, 121.465], 11);
             
-            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OSM contributors'
-            });
-            osmLayer.addTo(map);
+            }).addTo(map);
 
-            ncdrLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/WRA_FLOOD_600/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
-                maxZoom: 20,
-                maxNativeZoom: 12, 
-                opacity: 0.8, 
-                attribution: 'NCDR 淹水潛勢圖',
-                zIndex: 1000 
+            // Populate Dropdown
+            const select = document.getElementById('flood-scenario-select');
+            select.innerHTML = ''; // clear
+            let defaultKey = '24H350R';
+            Object.keys(FLOOD_DATA).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.text = FLOOD_DATA[key].name;
+                if(key === defaultKey) opt.selected = true;
+                select.appendChild(opt);
             });
 
-            ncdrEmapLayer = L.tileLayer('https://wmts.ncdr.nat.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
-                maxZoom: 20,
-                maxNativeZoom: 15,
-                opacity: 1.0, 
-                attribution: 'NCDR 電子地圖',
-                zIndex: 500
-            });
-            
             // Init Scene
             renderScene();
             // Init Selection Shop UI State (Default Select first one)
             const firstCard = document.querySelector('.select-card');
             if(firstCard) selectSolution('nbs', firstCard);
         });
+
+        // Update Flood Layer Logic
+        function updateFloodLayer(key) {
+            if (currentFloodLayer) {
+                map.removeLayer(currentFloodLayer);
+            }
+
+            const data = FLOOD_DATA[key];
+            if (!data) return;
+
+            const imageUrl = IMAGE_PATH + data.file;
+            const opacity = document.getElementById('opacity-slider').value / 100;
+
+            // Use L.imageOverlay
+            currentFloodLayer = L.imageOverlay(imageUrl, imageBounds, {
+                opacity: opacity,
+                interactive: true
+            }).addTo(map);
+
+            // Update description text
+            const desc = document.getElementById('result-flood-desc');
+            if(desc) {
+                desc.innerHTML = `情境：<span class="text-white font-bold">${data.name}</span><br>請縮放地圖檢視紅色積水區塊。`;
+            }
+        }
+
+        // Update Opacity
+        function updateFloodOpacity(val) {
+            if (currentFloodLayer) {
+                currentFloodLayer.setOpacity(val / 100);
+            }
+            document.getElementById('opacity-label').innerText = `透明度 ${val}%`;
+        }
+
 
         // ... (getMockTemp - KEEP SAME) ...
         function getMockTemp() {
@@ -977,13 +1040,13 @@
                 }
 
                 cwaDot.classList.remove('animate-ping');
-                statusMsg.innerText = "正在載入 NCDR 災害圖資...";
+                statusMsg.innerText = "正在載入本地災害圖資...";
                 ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 ncdrDot.classList.add('animate-ping');
-                await new Promise(r => setTimeout(r, 800));
+                
+                // --- NEW LOGIC START: Load Local Image ---
+                await new Promise(r => setTimeout(r, 800)); // Fake loading
 
-                const now = new Date();
-                const obsTime = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
                 ncdrDot.classList.remove('animate-ping');
@@ -991,20 +1054,21 @@
                 
                 if(map) {
                     map.invalidateSize();
-                    map.flyTo([locationData.lat, locationData.lng], 15); 
+                    map.flyTo([locationData.lat, locationData.lng], 14); // Zoom level 14 is good for flood map
                     if(heatCircle) map.removeLayer(heatCircle);
                     heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
                     L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
-                    if(ncdrEmapLayer && ncdrLayer) {
-                        ncdrEmapLayer.addTo(map);
-                        setTimeout(() => { map.removeLayer(ncdrEmapLayer); ncdrLayer.addTo(map); }, 3000);
-                    }
+                    
+                    // Trigger default flood layer
+                    const select = document.getElementById('flood-scenario-select');
+                    updateFloodLayer(select.value);
                 }
+                // --- NEW LOGIC END ---
 
                 statusMsg.innerText = "分析完成！圖層已疊加";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
-                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA + NCDR)`;
-                document.getElementById('result-flood-desc').innerText = `已套疊 NCDR 淹水潛勢圖 (600mm)。該區域若有紅/黃色塊，建議優先評估基地保水方案。`;
+                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
+                
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
             } catch (e) {
                 console.error(e);
@@ -1016,6 +1080,12 @@
                 statusMsg.innerText = "分析完成 (模擬數據模式)";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
+                
+                // Also load image in mock mode
+                if(map) {
+                    const select = document.getElementById('flood-scenario-select');
+                    updateFloodLayer(select.value);
+                }
             }
         }
 
