@@ -96,16 +96,21 @@
             overflow: hidden;
             background-color: #334155;
             border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            cursor: grab;
+        }
+        .map-viewer-container:active {
+            cursor: grabbing;
         }
         .map-viewer-container img {
-            transition: transform 0.1s ease-out;
-            transform-origin: center center;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            max-width: none;
+            max-height: none;
+            user-select: none;
+            pointer-events: none;
+            will-change: transform;
         }
         .comparison-container {
             position: relative;
@@ -311,7 +316,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址（至街道名即可）">
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址">
                     </div>
                     <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
@@ -376,8 +381,8 @@
                                     </select>
                                 </div>
 
-                                <div class="map-viewer-container flex-grow bg-slate-900 border border-slate-700 relative group" onwheel="handleZoom(event)">
-                                    <img id="flood-image-viewer" src="" alt="請選擇情境" class="block" style="transform: scale(1);">
+                                <div class="map-viewer-container flex-grow bg-slate-900 border border-slate-700 relative group" id="map-viewer-container">
+                                    <img id="flood-image-viewer" src="" alt="請選擇情境" class="block">
                                     
                                     <div class="zoom-controls">
                                         <span id="zoom-level" class="text-white text-xs font-mono mr-2 bg-black/50 px-2 py-1 rounded">100%</span>
@@ -400,7 +405,7 @@
                                 </div>
                                 
                                 <p class="text-xs text-slate-400 mt-2 text-center">
-                                    * 因圖資檔案較大，切換可能有延遲情形。可使用滾輪縮放。
+                                    * 可使用滾輪縮放指定區域，按住左鍵拖曳移動。
                                 </p>
                             </div>
                         </div>
@@ -779,16 +784,16 @@
 
         const IMAGE_PATH = './images/';
         const FLOOD_DATA = {
-            '6H150R': { file: '新北6H150R.jpg', name: '6小時 150mm (短延時強降雨)' },
+            '6H150R': { file: '新北6H150R.jpg', name: '6小時 150mm' },
             '6H250R': { file: '新北6H250R.jpg', name: '6小時 250mm' },
-            '6H350R': { file: '新北6H350R.jpg', name: '6小時 350mm (極端)' },
+            '6H350R': { file: '新北6H350R.jpg', name: '6小時 350mm' },
             '12H200R': { file: '新北12H200R.jpg', name: '12小時 200mm' },
             '12H300R': { file: '新北12H300R.jpg', name: '12小時 300mm' },
             '12H400R': { file: '新北12H400R.jpg', name: '12小時 400mm' },
             '24H200R': { file: '新北24H200R.jpg', name: '24小時 200mm' },
-            '24H350R': { file: '新北24H350R.jpg', name: '24小時 350mm (納莉颱風等級)' },
-            '24H500R': { file: '新北24H500R.jpg', name: '24小時 500mm (莫拉克等級)' },
-            '24H650R': { file: '新北24H650R.jpg', name: '24小時 650mm (超大豪雨)' }
+            '24H350R': { file: '新北24H350R.jpg', name: '24小時 350mm' },
+            '24H500R': { file: '新北24H500R.jpg', name: '24小時 500mm' },
+            '24H650R': { file: '新北24H650R.jpg', name: '24小時 650mm' }
         };
 
         const COST_DB = {
@@ -832,7 +837,16 @@
 
         let map = null;
         let heatCircle = null;
-        let currentZoom = 1;
+        
+        // Viewer State
+        let viewerState = {
+            scale: 1,
+            x: 0,
+            y: 0,
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log("TanJi Platform v2.4 Loaded");
@@ -854,35 +868,113 @@
                 select.appendChild(opt);
             });
 
+            initMapViewer();
             updateFloodImage(defaultKey);
             renderScene();
             const firstCard = document.querySelector('.select-card');
             if(firstCard) selectSolution('nbs', firstCard);
         });
 
+        function initMapViewer() {
+            const container = document.getElementById('map-viewer-container');
+            const img = document.getElementById('flood-image-viewer');
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = container.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                
+                // Zoom towards mouse pointer logic
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.min(Math.max(0.1, viewerState.scale * delta), 5);
+
+                viewerState.x = mx - (mx - viewerState.x) * (newScale / viewerState.scale);
+                viewerState.y = my - (my - viewerState.y) * (newScale / viewerState.scale);
+                viewerState.scale = newScale;
+
+                updateViewerTransform();
+            });
+
+            container.addEventListener('mousedown', (e) => {
+                viewerState.isDragging = true;
+                viewerState.startX = e.clientX - viewerState.x;
+                viewerState.startY = e.clientY - viewerState.y;
+                container.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!viewerState.isDragging) return;
+                e.preventDefault();
+                viewerState.x = e.clientX - viewerState.startX;
+                viewerState.y = e.clientY - viewerState.startY;
+                updateViewerTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                viewerState.isDragging = false;
+                container.style.cursor = 'grab';
+            });
+        }
+
+        function updateViewerTransform() {
+            const img = document.getElementById('flood-image-viewer');
+            const label = document.getElementById('zoom-level');
+            if (img) {
+                img.style.transform = `translate(${viewerState.x}px, ${viewerState.y}px) scale(${viewerState.scale})`;
+            }
+            if (label) {
+                label.innerText = `${Math.round(viewerState.scale * 100)}%`;
+            }
+        }
+
         function changeZoom(delta) {
-            currentZoom += delta;
-            if (currentZoom < 0.1) currentZoom = 0.1;
-            if (currentZoom > 5) currentZoom = 5;
-            updateZoomTransform();
+            // Simple center zoom for buttons
+            const container = document.getElementById('map-viewer-container');
+            const rect = container.getBoundingClientRect();
+            const cx = rect.width / 2;
+            const cy = rect.height / 2;
+            
+            const newScale = Math.min(Math.max(0.1, viewerState.scale + delta), 5);
+            
+            // Zoom from center
+            viewerState.x = cx - (cx - viewerState.x) * (newScale / viewerState.scale);
+            viewerState.y = cy - (cy - viewerState.y) * (newScale / viewerState.scale);
+            viewerState.scale = newScale;
+            
+            updateViewerTransform();
         }
 
         function resetZoom() {
-            currentZoom = 1;
-            updateZoomTransform();
-        }
-
-        function handleZoom(event) {
-            event.preventDefault();
-            const delta = event.deltaY > 0 ? -0.1 : 0.1;
-            changeZoom(delta);
-        }
-
-        function updateZoomTransform() {
+            const container = document.getElementById('map-viewer-container');
             const img = document.getElementById('flood-image-viewer');
-            const label = document.getElementById('zoom-level');
-            if (img) img.style.transform = `scale(${currentZoom})`;
-            if (label) label.innerText = `${Math.round(currentZoom * 100)}%`;
+            
+            if (!container || !img || img.naturalWidth === 0) {
+                 viewerState.scale = 1;
+                 viewerState.x = 0;
+                 viewerState.y = 0;
+                 updateViewerTransform();
+                 return;
+            }
+
+            // Fit containment logic
+            const containerRatio = container.clientWidth / container.clientHeight;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+            let scale = 1;
+
+            if (imgRatio > containerRatio) {
+                scale = container.clientWidth / img.naturalWidth;
+            } else {
+                scale = container.clientHeight / img.naturalHeight;
+            }
+            // Ensure scaling isn't too small initially if image is tiny, but usually we want to fit.
+            // Let's just fit nicely.
+            
+            viewerState.scale = scale;
+            viewerState.x = (container.clientWidth - img.naturalWidth * scale) / 2;
+            viewerState.y = (container.clientHeight - img.naturalHeight * scale) / 2;
+            
+            updateViewerTransform();
         }
 
         function updateFloodImage(key) {
@@ -897,10 +989,13 @@
             imgViewer.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             
+            // Reset zoom when image loads
+            imgViewer.onload = function() {
+                resetZoom();
+            };
+            
             imgViewer.src = imageUrl;
             downloadBtn.href = imageUrl;
-            
-            resetZoom();
 
             imgViewer.onerror = function() {
                 imgViewer.classList.add('hidden');
