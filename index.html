@@ -578,12 +578,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <button id="btn-generate" onclick="generateSubsidyDoc()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <i class="fa-solid fa-file-signature"></i>
-                        一鍵生成改造補助計畫書
-                    </button>
-                    <p class="text-center text-xs text-slate-400 mt-2">* 自動填入新北市環保局格式表格</p>
                 </div>
             </div>
         </div>
@@ -1145,15 +1139,13 @@
             else if (households < 300) maxSubsidy = 200000;
 
             const costPreview = document.getElementById('cost-preview');
-            const generateBtn = document.getElementById('btn-generate');
+            // Removed dependency on btn-generate
 
             if (progress > 0.1) {
                 costPreview.classList.remove('hidden');
-                generateBtn.disabled = false;
             } else {
                  if(progress === 0) {
                     costPreview.classList.add('hidden');
-                    generateBtn.disabled = true;
                  }
             }
 
@@ -1230,65 +1222,6 @@
             } else {
                 clearInterval(autoPlayInterval);
             }
-        }
-
-        function generateSubsidyDoc() {
-            const orgName = document.getElementById('sim-org-name').value || "申請單位未填寫";
-            const address = document.getElementById('sim-address').value || "地址未填寫";
-            const area = document.getElementById('sim-area').value;
-            const households = document.getElementById('sim-households').value;
-            const type = document.getElementById('sim-type').value;
-            const locationSelect = document.getElementById('sim-location');
-            const locationText = locationSelect.options[locationSelect.selectedIndex].text;
-            const config = COST_DB[type];
-            
-            const totalCostStr = document.getElementById('val-total-cost').innerText;
-            const subsidyStr = document.getElementById('val-subsidy').innerText;
-            const roiStr = document.getElementById('val-roi').innerText;
-            const benefitStr = document.getElementById('val-carbon').innerText;
-
-            const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
-            
-            const cellStyle = {
-                borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                },
-            };
-
-            const doc = new Document({
-                sections: [{
-                    children: [
-                        new Paragraph({ text: "114年度新北市低碳社區改造補助計畫申請表", heading: docx.HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            rows: [
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"申請單位", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(orgName)], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區地址", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(address)], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"社區戶數", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(households + " 戶")], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph({text:"改造項目", bold:true})], ...cellStyle }), new TableCell({ children: [new Paragraph(`${config.title} - ${locationText}`)], ...cellStyle }) ]}),
-                            ]
-                        }),
-                        new Paragraph({ text: "\n一、改善方式與現況", heading: docx.HeadingLevel.HEADING_2 }),
-                        new Paragraph({ text: `${config.desc} 預計施作位置為 ${locationText}，面積約 ${area} 坪。` }),
-                        new Paragraph({ text: "\n二、經費與效益", heading: docx.HeadingLevel.HEADING_2 }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            rows: [
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("預估總經費")], ...cellStyle }), new TableCell({ children: [new Paragraph(totalCostStr)], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("申請補助")], ...cellStyle }), new TableCell({ children: [new Paragraph(subsidyStr)], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("預估效益")], ...cellStyle }), new TableCell({ children: [new Paragraph(benefitStr)], ...cellStyle }) ]}),
-                                new TableRow({ children: [ new TableCell({ children: [new Paragraph("回收年限")], ...cellStyle }), new TableCell({ children: [new Paragraph(roiStr)], ...cellStyle }) ]}),
-                            ]
-                        }),
-                        new Paragraph({ text: "\n※ 由 TanJi 平台自動生成。", alignment: AlignmentType.CENTER, color: "888888" })
-                    ]
-                }]
-            });
-
-            Packer.toBlob(doc).then(blob => saveAs(blob, `${orgName}_改造計畫書.docx`));
         }
     </script>
 </body>
