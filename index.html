@@ -232,7 +232,7 @@
                     <a href="#features" class="text-slate-600 hover:text-brand-green font-medium transition">核心功能</a>
                     <a href="#demo-scan" class="text-slate-600 hover:text-brand-green font-medium transition">風險快篩</a>
                     <a href="#demo-sim" class="text-slate-600 hover:text-brand-green font-medium transition">效益模擬</a>
-                    <a href="#impact" class="text-slate-600 hover:text-brand-green font-medium transition">預期成果</a>
+                    <a href="#collaboration" class="text-slate-600 hover:text-brand-green font-medium transition">合作案例</a>
                 </div>
                 <div></div>
             </div>
@@ -592,6 +592,39 @@
         </div>
     </section>
 
+    <section id="collaboration" class="py-20 bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-brand-green font-bold tracking-widest uppercase text-sm bg-brand-light px-3 py-1 rounded-full mb-3 inline-block">CASES</span>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">低碳社區合作案例</h2>
+                <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證綠色改造的實際成果。</p>
+            </div>
+
+            <div class="flex justify-center">
+                <a href="https://tanji2026.github.io/wonderfulplace" target="_blank" class="w-full max-w-md group block bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
+                        <img src="assets/logo/logo_header.png" alt="麗寶萊茵社區" class="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400?text=Community+Logo'">
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="mb-4">
+                            <h3 class="text-3xl font-black text-slate-800">
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-500">麗寶萊茵</span>
+                            </h3>
+                        </div>
+                        <p class="text-slate-500 text-base mb-6 leading-relaxed">
+                            運用數位工具盤點社區生態與節能設施，打造與自然共生的永續生活環境。
+                        </p>
+                        <div class="inline-flex items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
+                            <span>瀏覽案例社區官網</span>
+                            <i class="fa-solid fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <footer id="impact" class="bg-slate-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center">
@@ -838,7 +871,6 @@
         let map = null;
         let heatCircle = null;
         
-        // Viewer State
         let viewerState = {
             scale: 1,
             x: 0,
@@ -885,7 +917,6 @@
                 const mx = e.clientX - rect.left;
                 const my = e.clientY - rect.top;
                 
-                // Zoom towards mouse pointer logic
                 const delta = e.deltaY > 0 ? 0.9 : 1.1;
                 const newScale = Math.min(Math.max(0.1, viewerState.scale * delta), 5);
 
@@ -929,7 +960,6 @@
         }
 
         function changeZoom(delta) {
-            // Simple center zoom for buttons
             const container = document.getElementById('map-viewer-container');
             const rect = container.getBoundingClientRect();
             const cx = rect.width / 2;
@@ -937,7 +967,6 @@
             
             const newScale = Math.min(Math.max(0.1, viewerState.scale + delta), 5);
             
-            // Zoom from center
             viewerState.x = cx - (cx - viewerState.x) * (newScale / viewerState.scale);
             viewerState.y = cy - (cy - viewerState.y) * (newScale / viewerState.scale);
             viewerState.scale = newScale;
@@ -957,7 +986,6 @@
                  return;
             }
 
-            // Fit containment logic
             const containerRatio = container.clientWidth / container.clientHeight;
             const imgRatio = img.naturalWidth / img.naturalHeight;
             let scale = 1;
@@ -967,8 +995,6 @@
             } else {
                 scale = container.clientHeight / img.naturalHeight;
             }
-            // Ensure scaling isn't too small initially if image is tiny, but usually we want to fit.
-            // Let's just fit nicely.
             
             viewerState.scale = scale;
             viewerState.x = (container.clientWidth - img.naturalWidth * scale) / 2;
@@ -989,7 +1015,6 @@
             imgViewer.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             
-            // Reset zoom when image loads
             imgViewer.onload = function() {
                 resetZoom();
             };
@@ -1075,7 +1100,11 @@
                 let locationName = userInput;
 
                 try {
-                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); 
+                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
                     if (geoRes.ok) {
                         geoData = await geoRes.json();
                         locationName = geoData.name;
@@ -1088,7 +1117,6 @@
                     if(!osmRaw && userInput.includes("號")) {
                         const broaderSearch = userInput.replace(/(\d+號).*/, '').replace(/(\d+樓).*/, '');
                         if(broaderSearch !== userInput) {
-                            console.log("Retry fuzzy search:", broaderSearch);
                             osmRaw = await fetchOSM("台灣 " + broaderSearch);
                             if(osmRaw) statusMsg.innerText = "已定位到附近路段 (門牌模糊搜尋)";
                         }
@@ -1112,7 +1140,11 @@
                 cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping');
 
-                const weatherRes = await fetch(`${backendUrl}/api/weather`);
+                const controllerWeather = new AbortController();
+                const timeoutIdWeather = setTimeout(() => controllerWeather.abort(), 5000);
+                const weatherRes = await fetch(`${backendUrl}/api/weather`, { signal: controllerWeather.signal });
+                clearTimeout(timeoutIdWeather);
+
                 if (!weatherRes.ok) throw new Error("氣象連線失敗");
                 const weatherRaw = await weatherRes.json();
                 
@@ -1139,10 +1171,7 @@
                 
                 await new Promise(r => setTimeout(r, 800)); 
 
-                btnText.innerText = '重新分析';
-                btnLoader.classList.add('hidden');
                 ncdrDot.classList.remove('animate-ping');
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 
                 if(map) {
                     map.invalidateSize();
@@ -1160,13 +1189,12 @@
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+
             } catch (e) {
                 console.error(e);
                 alert("連線異常或無法定位，切換至備援模式。");
                 const mock = getMockTemp();
-                btnText.innerText = '重新分析';
-                btnLoader.classList.add('hidden');
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 statusMsg.innerText = "分析完成 (模擬數據模式)";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
@@ -1176,6 +1204,13 @@
                       const select = document.getElementById('flood-scenario-select');
                       updateFloodImage(select.value);
                 }
+                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+            } finally {
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                ntpcDot.classList.remove('animate-ping');
+                cwaDot.classList.remove('animate-ping');
+                ncdrDot.classList.remove('animate-ping');
             }
         }
 
