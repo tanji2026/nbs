@@ -313,16 +313,17 @@
             </div>
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                <!-- IMPORTANT: Form wrapper to prevent default submission page reload on Enter key -->
+                <form onsubmit="event.preventDefault(); startAnalysis();" class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
                         <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址">
                     </div>
-                    <button type="button" onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
+                    <button type="submit" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
                         <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
                     </button>
-                </div>
+                </form>
                 
                 <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
@@ -398,7 +399,7 @@
                                     </div>
 
                                     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition duration-300">
-                                        <a id="download-map-btn" href="#" download class="bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded text-xs backdrop-blur-sm">
+                                        <a id="download-map-btn" href="javascript:void(0)" download class="bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded text-xs backdrop-blur-sm">
                                             <i class="fa-solid fa-download mr-1"></i>下載此圖
                                         </a>
                                     </div>
@@ -1100,7 +1101,7 @@
 
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000); 
+                    const timeoutId = setTimeout(() => controller.abort(), 3000); 
                     const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     
@@ -1172,13 +1173,20 @@
 
                 ncdrDot.classList.remove('animate-ping');
                 
-                if(map) {
-                    map.invalidateSize();
-                    map.flyTo([locationData.lat, locationData.lng], 15);
-                    if(heatCircle) map.removeLayer(heatCircle);
-                    heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
-                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
-                }
+                resultDiv.classList.remove('hidden');
+                void resultDiv.offsetWidth; 
+                resultDiv.classList.remove('opacity-0', 'translate-y-4');
+
+                setTimeout(() => {
+                    if(map) {
+                        map.invalidateSize();
+                        map.setView([locationData.lat, locationData.lng], 15);
+                        if(heatCircle) map.removeLayer(heatCircle);
+                        heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
+                        L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
+                    }
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
                 
                 const select = document.getElementById('flood-scenario-select');
                 updateFloodImage(select.value);
@@ -1188,8 +1196,6 @@
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             } catch (e) {
                 console.error(e);
@@ -1198,13 +1204,18 @@
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
-                if(map) {
-                      map.invalidateSize();
-                      const select = document.getElementById('flood-scenario-select');
-                      updateFloodImage(select.value);
-                }
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                resultDiv.classList.remove('hidden');
+                void resultDiv.offsetWidth; 
+                resultDiv.classList.remove('opacity-0', 'translate-y-4');
+
+                setTimeout(() => {
+                    if(map) {
+                        map.invalidateSize();
+                        const select = document.getElementById('flood-scenario-select');
+                        updateFloodImage(select.value);
+                    }
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             } finally {
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
