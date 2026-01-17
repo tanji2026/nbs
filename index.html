@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="碳吉 TanJi - 社區氣候韌性與 NbS 決策平台">
     <meta name="robots" content="noindex,nofollow">
     <title>碳吉 TanJi - 社區微氣候韌性與 NbS 決策平台</title>
@@ -97,6 +97,7 @@
             background-color: #334155;
             border-radius: 0.75rem;
             cursor: grab;
+            touch-action: none; /* Critical for mobile: prevent pull-to-refresh/scroll */
         }
         .map-viewer-container:active {
             cursor: grabbing;
@@ -118,6 +119,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #f1f5f9;
+            touch-action: pan-y;
         }
         .scene-layer {
             position: absolute;
@@ -172,6 +174,7 @@
             cursor: ew-resize;
             z-index: 40;
             margin: 0;
+            touch-action: pan-y;
         }
         svg {
             display: block;
@@ -215,6 +218,30 @@
         .zoom-btn:hover {
             background: rgba(0, 0, 0, 0.8);
         }
+        
+        /* Helper Bot Styles */
+        .helper-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: linear-gradient(to bottom right, #10b981, #0d9488);
+            border-radius: 9999px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 0.2s;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .helper-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
     </style>
 </head>
 <body class="font-sans text-slate-800 antialiased bg-slate-50">
@@ -228,13 +255,31 @@
                     </div>
                     <span class="font-bold text-2xl tracking-tight text-slate-800">碳吉 <span class="text-brand-green font-light">TanJi</span></span>
                 </div>
+                
+                <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-8">
                     <a href="#features" class="text-slate-600 hover:text-brand-green font-medium transition">核心功能</a>
                     <a href="#demo-scan" class="text-slate-600 hover:text-brand-green font-medium transition">風險快篩</a>
                     <a href="#demo-sim" class="text-slate-600 hover:text-brand-green font-medium transition">效益模擬</a>
                     <a href="#collaboration" class="text-slate-600 hover:text-brand-green font-medium transition">合作案例</a>
                 </div>
-                <div></div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="toggleMobileMenu()" class="text-slate-600 hover:text-brand-green focus:outline-none p-2">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-20 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-lg transition-all duration-300">
+            <div class="px-4 pt-2 pb-4 space-y-1 flex flex-col">
+                <a href="#features" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">核心功能</a>
+                <a href="#demo-scan" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">風險快篩</a>
+                <a href="#demo-sim" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">效益模擬</a>
+                <a href="#collaboration" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">合作案例</a>
             </div>
         </div>
     </nav>
@@ -313,11 +358,11 @@
             </div>
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-                <!-- IMPORTANT: Form wrapper to prevent default submission page reload on Enter key -->
-                <form onsubmit="event.preventDefault(); startAnalysis();" class="flex flex-col sm:flex-row gap-4 mb-8">
+                <!-- IMPORTANT: Form wrapper with explicit action to prevent default submission refresh issues -->
+                <form action="javascript:void(0);" onsubmit="startAnalysis(); return false;" class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址">
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition text-base" placeholder="請輸入新北市社區地址">
                     </div>
                     <button type="submit" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
@@ -378,7 +423,7 @@
                                 
                                 <div class="mb-3">
                                     <label class="text-xs text-slate-400 block mb-1">選擇降雨情境：</label>
-                                    <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-sm p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
+                                    <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-base p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
                                     </select>
                                 </div>
 
@@ -492,17 +537,17 @@
                         
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">申請單位 (社區全銜)</label>
-                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="如：XX社區管理委員會">
+                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-base" placeholder="如：XX社區管理委員會">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">社區地址</label>
-                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
+                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-base" placeholder="新北市...">
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">施作位置 (切換場景)</label>
-                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
+                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium text-base">
                                 <option value="rooftop">頂樓 (屋頂層)</option>
                                 <option value="facade">建築外牆 (立面)</option>
                                 <option value="ground">一樓中庭/開放空間</option>
@@ -642,6 +687,29 @@
             </div>
         </div>
     </footer>
+
+    <!-- Helper Bot Button -->
+    <div class="helper-btn" onclick="toggleHelperModal()">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+
+    <!-- Helper Modal -->
+    <div id="helperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm" onclick="toggleHelperModal()">
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform transition-all scale-100" onclick="event.stopPropagation()">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-brand-light text-brand-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800">歡迎使用 碳吉決策平台</h3>
+            </div>
+            <div class="space-y-4 text-slate-600 text-sm">
+                <p><span class="font-bold text-brand-green">風險快篩：</span>輸入社區地址，立即獲取熱島效應與淹水潛勢分析。</p>
+                <p><span class="font-bold text-brand-green">NbS 選物店：</span>選擇改善方案（綠屋頂、透水鋪面等），即時預覽改造後效果與降溫數據。</p>
+                <p><span class="font-bold text-brand-green">效益模擬：</span>根據社區戶數與施作面積，自動計算政府補助金額與回收年限。</p>
+            </div>
+            <button onclick="toggleHelperModal()" class="w-full mt-8 bg-brand-green hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition">我知道了！</button>
+        </div>
+    </div>
 
     <script>
         const SCENES = {
@@ -927,6 +995,7 @@
                 updateViewerTransform();
             });
 
+            // Mouse Events
             container.addEventListener('mousedown', (e) => {
                 viewerState.isDragging = true;
                 viewerState.startX = e.clientX - viewerState.x;
@@ -945,6 +1014,29 @@
             window.addEventListener('mouseup', () => {
                 viewerState.isDragging = false;
                 container.style.cursor = 'grab';
+            });
+
+            // Touch Events for Mobile
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    viewerState.isDragging = true;
+                    viewerState.startX = e.touches[0].clientX - viewerState.x;
+                    viewerState.startY = e.touches[0].clientY - viewerState.y;
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!viewerState.isDragging) return;
+                e.preventDefault(); // Prevent page scroll while dragging image
+                if (e.touches.length === 1) {
+                    viewerState.x = e.touches[0].clientX - viewerState.startX;
+                    viewerState.y = e.touches[0].clientY - viewerState.startY;
+                    updateViewerTransform();
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', () => {
+                viewerState.isDragging = false;
             });
         }
 
@@ -1366,6 +1458,17 @@
             } else {
                 clearInterval(autoPlayInterval);
             }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleHelperModal() {
+            const modal = document.getElementById('helperModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
     </script>
 </body>
