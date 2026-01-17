@@ -318,7 +318,7 @@
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
                         <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址">
                     </div>
-                    <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
+                    <button type="button" onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
                         <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
                     </button>
@@ -627,15 +627,14 @@
 
     <footer id="impact" class="bg-slate-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-6 md:mb-0">
-                    <div class="flex items-center gap-2 mb-2">
+            <div class="flex flex-col items-center justify-center text-center">
+                <div class="mb-6">
+                    <div class="flex items-center justify-center gap-2 mb-2">
                         <i class="fa-solid fa-leaf text-brand-green"></i>
                         <span class="font-bold text-xl">碳吉 TanJi</span>
                     </div>
                     <p class="text-slate-400 text-sm">教育部 115 年度氣候變遷創意實作競賽參賽隊伍｜作品受著作權法保護，未經授權請勿複製轉載。</p>
                 </div>
-                <div class="flex gap-6"></div>
             </div>
             <div class="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500 text-sm">
                 &copy; 2026 TanJi Project. All rights reserved.
@@ -1190,12 +1189,12 @@
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             } catch (e) {
                 console.error(e);
-                alert("連線異常或無法定位，切換至備援模式。");
                 const mock = getMockTemp();
-                statusMsg.innerText = "分析完成 (模擬數據模式)";
+                statusMsg.innerText = "連線異常，切換至模擬模式";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
@@ -1205,6 +1204,7 @@
                       updateFloodImage(select.value);
                 }
                 resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } finally {
                 btnText.innerText = '重新分析';
                 btnLoader.classList.add('hidden');
