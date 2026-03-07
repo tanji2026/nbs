@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="碳吉 TanJi - 社區氣候韌性與 NbS 決策平台">
     <meta name="robots" content="noindex,nofollow">
     <title>碳吉 TanJi - 社區微氣候韌性與 NbS 決策平台</title>
@@ -97,6 +97,7 @@
             background-color: #334155;
             border-radius: 0.75rem;
             cursor: grab;
+            touch-action: none; /* Critical for mobile: prevent pull-to-refresh/scroll */
         }
         .map-viewer-container:active {
             cursor: grabbing;
@@ -118,6 +119,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #f1f5f9;
+            touch-action: pan-y;
         }
         .scene-layer {
             position: absolute;
@@ -172,6 +174,7 @@
             cursor: ew-resize;
             z-index: 40;
             margin: 0;
+            touch-action: pan-y;
         }
         svg {
             display: block;
@@ -215,6 +218,30 @@
         .zoom-btn:hover {
             background: rgba(0, 0, 0, 0.8);
         }
+        
+        /* Helper Bot Styles */
+        .helper-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: linear-gradient(to bottom right, #10b981, #0d9488);
+            border-radius: 9999px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 0.2s;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .helper-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
     </style>
 </head>
 <body class="font-sans text-slate-800 antialiased bg-slate-50">
@@ -228,13 +255,31 @@
                     </div>
                     <span class="font-bold text-2xl tracking-tight text-slate-800">碳吉 <span class="text-brand-green font-light">TanJi</span></span>
                 </div>
+                
+                <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-8">
                     <a href="#features" class="text-slate-600 hover:text-brand-green font-medium transition">核心功能</a>
                     <a href="#demo-scan" class="text-slate-600 hover:text-brand-green font-medium transition">風險快篩</a>
                     <a href="#demo-sim" class="text-slate-600 hover:text-brand-green font-medium transition">效益模擬</a>
-                    <a href="#impact" class="text-slate-600 hover:text-brand-green font-medium transition">預期成果</a>
+                    <a href="#collaboration" class="text-slate-600 hover:text-brand-green font-medium transition">合作案例</a>
                 </div>
-                <div></div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="toggleMobileMenu()" class="text-slate-600 hover:text-brand-green focus:outline-none p-2">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-20 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-lg transition-all duration-300">
+            <div class="px-4 pt-2 pb-4 space-y-1 flex flex-col">
+                <a href="#features" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">核心功能</a>
+                <a href="#demo-scan" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">風險快篩</a>
+                <a href="#demo-sim" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">效益模擬</a>
+                <a href="#collaboration" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">合作案例</a>
             </div>
         </div>
     </nav>
@@ -313,16 +358,17 @@
             </div>
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                <!-- IMPORTANT: Form wrapper with explicit action to prevent default submission refresh issues -->
+                <form action="javascript:void(0);" onsubmit="startAnalysis(); return false;" class="flex flex-col sm:flex-row gap-4 mb-8">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition" placeholder="請輸入新北市社區地址">
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition text-base" placeholder="請輸入新北市社區地址">
                     </div>
-                    <button onclick="startAnalysis()" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
+                    <button type="submit" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
                         <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
                     </button>
-                </div>
+                </form>
                 
                 <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
@@ -377,7 +423,7 @@
                                 
                                 <div class="mb-3">
                                     <label class="text-xs text-slate-400 block mb-1">選擇降雨情境：</label>
-                                    <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-sm p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
+                                    <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-base p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
                                     </select>
                                 </div>
 
@@ -398,7 +444,7 @@
                                     </div>
 
                                     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition duration-300">
-                                        <a id="download-map-btn" href="#" download class="bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded text-xs backdrop-blur-sm">
+                                        <a id="download-map-btn" href="javascript:void(0)" download class="bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded text-xs backdrop-blur-sm">
                                             <i class="fa-solid fa-download mr-1"></i>下載此圖
                                         </a>
                                     </div>
@@ -491,17 +537,17 @@
                         
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">申請單位 (社區全銜)</label>
-                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="如：XX社區管理委員會">
+                            <input type="text" id="sim-org-name" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-base" placeholder="如：XX社區管理委員會">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">社區地址</label>
-                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm" placeholder="新北市...">
+                            <input type="text" id="sim-address" class="w-full border border-slate-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-base" placeholder="新北市...">
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">施作位置 (切換場景)</label>
-                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium">
+                            <select id="sim-location" onchange="renderScene(); updateCalculations();" class="w-full border border-slate-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-brand-green outline-none transition text-slate-700 font-medium text-base">
                                 <option value="rooftop">頂樓 (屋頂層)</option>
                                 <option value="facade">建築外牆 (立面)</option>
                                 <option value="ground">一樓中庭/開放空間</option>
@@ -592,23 +638,78 @@
         </div>
     </section>
 
+    <section id="collaboration" class="py-20 bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-brand-green font-bold tracking-widest uppercase text-sm bg-brand-light px-3 py-1 rounded-full mb-3 inline-block">CASES</span>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">低碳社區合作案例</h2>
+                <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證綠色改造的實際成果。</p>
+            </div>
+
+            <div class="flex justify-center">
+                <a href="https://tanji2026.github.io/wonderfulplace" target="_blank" class="w-full max-w-md group block bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
+                        <img src="assets/logo/logo_header.png" alt="麗寶萊茵社區" class="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400?text=Community+Logo'">
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="mb-4">
+                            <h3 class="text-3xl font-black text-slate-800">
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-500">麗寶萊茵</span>
+                            </h3>
+                        </div>
+                        <p class="text-slate-500 text-base mb-6 leading-relaxed">
+                            運用數位工具盤點社區生態與節能設施，打造與自然共生的永續生活環境。
+                        </p>
+                        <div class="inline-flex items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
+                            <span>瀏覽案例社區官網</span>
+                            <i class="fa-solid fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <footer id="impact" class="bg-slate-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-6 md:mb-0">
-                    <div class="flex items-center gap-2 mb-2">
+            <div class="flex flex-col items-center justify-center text-center">
+                <div class="mb-6">
+                    <div class="flex items-center justify-center gap-2 mb-2">
                         <i class="fa-solid fa-leaf text-brand-green"></i>
                         <span class="font-bold text-xl">碳吉 TanJi</span>
                     </div>
-                    <p class="text-slate-400 text-sm">教育部 115 年度氣候變遷創意實作競賽參賽隊伍</p>
+                    <p class="text-slate-400 text-sm">教育部 115 年度氣候變遷創意實作競賽參賽隊伍｜作品受著作權法保護，未經授權請勿複製轉載｜歡迎聯絡我們：tanji2026@gmail.com</p>
                 </div>
-                <div class="flex gap-6"></div>
             </div>
             <div class="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500 text-sm">
                 &copy; 2026 TanJi Project. All rights reserved.
             </div>
         </div>
     </footer>
+
+    <!-- Helper Bot Button -->
+    <div class="helper-btn" onclick="toggleHelperModal()">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+
+    <!-- Helper Modal -->
+    <div id="helperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm" onclick="toggleHelperModal()">
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform transition-all scale-100" onclick="event.stopPropagation()">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-brand-light text-brand-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800">歡迎使用 碳吉決策平台</h3>
+            </div>
+            <div class="space-y-4 text-slate-600 text-sm">
+                <p><span class="font-bold text-brand-green">風險快篩：</span>輸入社區地址，立即獲取熱島效應與淹水潛勢分析。</p>
+                <p><span class="font-bold text-brand-green">NbS 選物店：</span>選擇改善方案（綠屋頂、透水鋪面等），即時預覽改造後效果與降溫數據。</p>
+                <p><span class="font-bold text-brand-green">效益模擬：</span>根據社區戶數與施作面積，自動計算政府補助金額與回收年限。</p>
+            </div>
+            <button onclick="toggleHelperModal()" class="w-full mt-8 bg-brand-green hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition">我知道了！</button>
+        </div>
+    </div>
 
     <script>
         const SCENES = {
@@ -838,7 +939,6 @@
         let map = null;
         let heatCircle = null;
         
-        // Viewer State
         let viewerState = {
             scale: 1,
             x: 0,
@@ -885,7 +985,6 @@
                 const mx = e.clientX - rect.left;
                 const my = e.clientY - rect.top;
                 
-                // Zoom towards mouse pointer logic
                 const delta = e.deltaY > 0 ? 0.9 : 1.1;
                 const newScale = Math.min(Math.max(0.1, viewerState.scale * delta), 5);
 
@@ -896,6 +995,7 @@
                 updateViewerTransform();
             });
 
+            // Mouse Events
             container.addEventListener('mousedown', (e) => {
                 viewerState.isDragging = true;
                 viewerState.startX = e.clientX - viewerState.x;
@@ -915,6 +1015,29 @@
                 viewerState.isDragging = false;
                 container.style.cursor = 'grab';
             });
+
+            // Touch Events for Mobile
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    viewerState.isDragging = true;
+                    viewerState.startX = e.touches[0].clientX - viewerState.x;
+                    viewerState.startY = e.touches[0].clientY - viewerState.y;
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!viewerState.isDragging) return;
+                e.preventDefault(); // Prevent page scroll while dragging image
+                if (e.touches.length === 1) {
+                    viewerState.x = e.touches[0].clientX - viewerState.startX;
+                    viewerState.y = e.touches[0].clientY - viewerState.startY;
+                    updateViewerTransform();
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', () => {
+                viewerState.isDragging = false;
+            });
         }
 
         function updateViewerTransform() {
@@ -929,7 +1052,6 @@
         }
 
         function changeZoom(delta) {
-            // Simple center zoom for buttons
             const container = document.getElementById('map-viewer-container');
             const rect = container.getBoundingClientRect();
             const cx = rect.width / 2;
@@ -937,7 +1059,6 @@
             
             const newScale = Math.min(Math.max(0.1, viewerState.scale + delta), 5);
             
-            // Zoom from center
             viewerState.x = cx - (cx - viewerState.x) * (newScale / viewerState.scale);
             viewerState.y = cy - (cy - viewerState.y) * (newScale / viewerState.scale);
             viewerState.scale = newScale;
@@ -957,7 +1078,6 @@
                  return;
             }
 
-            // Fit containment logic
             const containerRatio = container.clientWidth / container.clientHeight;
             const imgRatio = img.naturalWidth / img.naturalHeight;
             let scale = 1;
@@ -967,8 +1087,6 @@
             } else {
                 scale = container.clientHeight / img.naturalHeight;
             }
-            // Ensure scaling isn't too small initially if image is tiny, but usually we want to fit.
-            // Let's just fit nicely.
             
             viewerState.scale = scale;
             viewerState.x = (container.clientWidth - img.naturalWidth * scale) / 2;
@@ -989,7 +1107,6 @@
             imgViewer.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             
-            // Reset zoom when image loads
             imgViewer.onload = function() {
                 resetZoom();
             };
@@ -1075,7 +1192,11 @@
                 let locationName = userInput;
 
                 try {
-                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000); 
+                    const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
                     if (geoRes.ok) {
                         geoData = await geoRes.json();
                         locationName = geoData.name;
@@ -1088,7 +1209,6 @@
                     if(!osmRaw && userInput.includes("號")) {
                         const broaderSearch = userInput.replace(/(\d+號).*/, '').replace(/(\d+樓).*/, '');
                         if(broaderSearch !== userInput) {
-                            console.log("Retry fuzzy search:", broaderSearch);
                             osmRaw = await fetchOSM("台灣 " + broaderSearch);
                             if(osmRaw) statusMsg.innerText = "已定位到附近路段 (門牌模糊搜尋)";
                         }
@@ -1112,7 +1232,11 @@
                 cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping');
 
-                const weatherRes = await fetch(`${backendUrl}/api/weather`);
+                const controllerWeather = new AbortController();
+                const timeoutIdWeather = setTimeout(() => controllerWeather.abort(), 5000);
+                const weatherRes = await fetch(`${backendUrl}/api/weather`, { signal: controllerWeather.signal });
+                clearTimeout(timeoutIdWeather);
+
                 if (!weatherRes.ok) throw new Error("氣象連線失敗");
                 const weatherRaw = await weatherRes.json();
                 
@@ -1139,18 +1263,22 @@
                 
                 await new Promise(r => setTimeout(r, 800)); 
 
-                btnText.innerText = '重新分析';
-                btnLoader.classList.add('hidden');
                 ncdrDot.classList.remove('animate-ping');
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
                 
-                if(map) {
-                    map.invalidateSize();
-                    map.flyTo([locationData.lat, locationData.lng], 15);
-                    if(heatCircle) map.removeLayer(heatCircle);
-                    heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
-                    L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
-                }
+                resultDiv.classList.remove('hidden');
+                void resultDiv.offsetWidth; 
+                resultDiv.classList.remove('opacity-0', 'translate-y-4');
+
+                setTimeout(() => {
+                    if(map) {
+                        map.invalidateSize();
+                        map.setView([locationData.lat, locationData.lng], 15);
+                        if(heatCircle) map.removeLayer(heatCircle);
+                        heatCircle = L.circle([locationData.lat, locationData.lng], { color: weatherData.color, fillColor: weatherData.color, fillOpacity: 0.4, radius: 200 }).addTo(map);
+                        L.marker([locationData.lat, locationData.lng]).addTo(map).bindPopup(`<b>${locationData.name}</b><br>氣溫: ${weatherData.temp}°C`).openPopup();
+                    }
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
                 
                 const select = document.getElementById('flood-scenario-select');
                 updateFloodImage(select.value);
@@ -1160,22 +1288,32 @@
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
+
             } catch (e) {
                 console.error(e);
-                alert("連線異常或無法定位，切換至備援模式。");
                 const mock = getMockTemp();
-                btnText.innerText = '重新分析';
-                btnLoader.classList.add('hidden');
-                resultDiv.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                statusMsg.innerText = "分析完成 (模擬數據模式)";
+                statusMsg.innerText = "連線異常，切換至模擬模式";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
                 
-                if(map) {
-                      map.invalidateSize();
-                      const select = document.getElementById('flood-scenario-select');
-                      updateFloodImage(select.value);
-                }
+                resultDiv.classList.remove('hidden');
+                void resultDiv.offsetWidth; 
+                resultDiv.classList.remove('opacity-0', 'translate-y-4');
+
+                setTimeout(() => {
+                    if(map) {
+                        map.invalidateSize();
+                        const select = document.getElementById('flood-scenario-select');
+                        updateFloodImage(select.value);
+                    }
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } finally {
+                btnText.innerText = '重新分析';
+                btnLoader.classList.add('hidden');
+                ntpcDot.classList.remove('animate-ping');
+                cwaDot.classList.remove('animate-ping');
+                ncdrDot.classList.remove('animate-ping');
             }
         }
 
@@ -1320,6 +1458,17 @@
             } else {
                 clearInterval(autoPlayInterval);
             }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleHelperModal() {
+            const modal = document.getElementById('helperModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
     </script>
 </body>
