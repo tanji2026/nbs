@@ -97,7 +97,7 @@
             background-color: #334155;
             border-radius: 0.75rem;
             cursor: grab;
-            touch-action: none; /* Critical for mobile: prevent pull-to-refresh/scroll */
+            touch-action: none;
         }
         .map-viewer-container:active {
             cursor: grabbing;
@@ -218,8 +218,6 @@
         .zoom-btn:hover {
             background: rgba(0, 0, 0, 0.8);
         }
-        
-        /* Helper Bot Styles */
         .helper-btn {
             position: fixed;
             bottom: 1.5rem;
@@ -256,7 +254,6 @@
                     <span class="font-bold text-2xl tracking-tight text-slate-800">碳吉 <span class="text-brand-green font-light">TanJi</span></span>
                 </div>
                 
-                <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-8">
                     <a href="#features" class="text-slate-600 hover:text-brand-green font-medium transition">核心功能</a>
                     <a href="#demo-scan" class="text-slate-600 hover:text-brand-green font-medium transition">風險快篩</a>
@@ -264,7 +261,6 @@
                     <a href="#collaboration" class="text-slate-600 hover:text-brand-green font-medium transition">合作案例</a>
                 </div>
 
-                <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
                     <button onclick="toggleMobileMenu()" class="text-slate-600 hover:text-brand-green focus:outline-none p-2">
                         <i class="fa-solid fa-bars text-2xl"></i>
@@ -273,7 +269,6 @@
             </div>
         </div>
 
-        <!-- Mobile Menu Dropdown -->
         <div id="mobile-menu" class="hidden md:hidden absolute top-20 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-lg transition-all duration-300">
             <div class="px-4 pt-2 pb-4 space-y-1 flex flex-col">
                 <a href="#features" onclick="toggleMobileMenu()" class="block px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-brand-green hover:bg-slate-50">核心功能</a>
@@ -292,8 +287,8 @@
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-brand-blue">綠色氣候防護衣</span>
             </h1>
             <p class="max-w-2xl mx-auto text-xl text-slate-600 mb-10 leading-relaxed">
-                社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，
-                協助管委會從「風險診斷」到「改造補助」一站式完成。
+                全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，
+                協助公部門與管委會從「宏觀圖資診斷」到「微觀改造補助」一站式完成。
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
                 <button onclick="document.getElementById('demo-scan').scrollIntoView({behavior: 'smooth'})" class="px-8 py-4 bg-brand-green hover:bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg shadow-emerald-200 transition transform hover:scale-105 flex items-center justify-center gap-2">
@@ -308,21 +303,21 @@
                         <div class="w-full md:w-1/2 text-left space-y-6">
                             <h3 class="text-2xl font-bold text-slate-800">TanJi 平台運作邏輯</h3>
                             <p class="text-slate-600 text-lg">
-                                專為社區管委會設計的氣候調適數位助理。我們不只告訴您「哪裡熱」，更直接提供「怎麼解」的科學方案。
+                                專為城市治理與社區管委會設計的氣候調適數位助理。我們不只告訴您哪裡有風險，更直接提供科學解方。
                             </p>
 
                             <ul class="space-y-4">
                                 <li class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fa-solid fa-database"></i></div>
-                                    <div><div class="font-bold text-slate-800">1. 數據匯流</div><div class="text-sm text-slate-500">串接氣象局與新北市GIS圖資</div></div>
+                                    <div><div class="font-bold text-slate-800">1. 數據匯流</div><div class="text-sm text-slate-500">串接氣象局與各縣市GIS圖資</div></div>
                                 </li>
                                 <li class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-                                    <div><div class="font-bold text-slate-800">2. 風險指認</div><div class="text-sm text-slate-500">AI 判讀都市熱島熱點與淹水潛勢</div></div>
+                                    <div><div class="font-bold text-slate-800">2. 風險指認</div><div class="text-sm text-slate-500">AI 判讀都市熱島熱點與災害潛勢</div></div>
                                 </li>
                                 <li class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-green"><i class="fa-solid fa-tree"></i></div>
-                                    <div><div class="font-bold text-slate-800">3. 自然解方 (NbS)</div><div class="text-sm text-slate-500">推薦適地適種的綠化與保水方案</div></div>
+                                    <div><div class="font-bold text-slate-800">3. 自然解方 (NbS)</div><div class="text-sm text-slate-500">推薦適地適種的綠化與補助方案</div></div>
                                 </li>
                             </ul>
                         </div>
@@ -352,23 +347,25 @@
 
         <div class="max-w-7xl mx-auto px-4 relative z-10">
             <div class="text-center mb-12">
-                <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 01</span>
-                <h2 class="text-3xl md:text-4xl font-bold mt-2">試試看：社區風險快篩</h2>
-                <p class="text-slate-400 mt-4">輸入新北市社區地址，即時診斷氣候風險</p>
+                <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 01 - 模組 A</span>
+                <h2 class="text-3xl md:text-4xl font-bold mt-2">宏觀風險快篩與社宅選址</h2>
+                <p class="text-slate-400 mt-4 max-w-2xl mx-auto">以臺北市為示範模型，協助公部門避開氣候高風險區，尋找最適合新建社會住宅之土地。</p>
             </div>
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-                <!-- IMPORTANT: Form wrapper with explicit action to prevent default submission refresh issues -->
-                <form action="javascript:void(0);" onsubmit="startAnalysis(); return false;" class="flex flex-col sm:flex-row gap-4 mb-8">
+                <form action="javascript:void(0);" onsubmit="startAnalysis(); return false;" class="flex flex-col sm:flex-row gap-4 mb-2">
                     <div class="flex-grow relative">
                         <i class="fa-solid fa-location-dot absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition text-base" placeholder="請輸入新北市社區地址">
+                        <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition text-base" placeholder="請輸入雙北社區地址...">
                     </div>
                     <button type="submit" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
                         <span id="btn-text">開始分析</span>
                         <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
                     </button>
                 </form>
+                <div class="text-center mb-8">
+                    <p class="text-xs text-slate-500">系統先期測試中，深度適宜性解析目前僅開放「大雙北地區」</p>
+                </div>
                 
                 <div class="mb-6 flex flex-wrap gap-2 justify-center text-xs text-slate-400">
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
@@ -378,7 +375,7 @@
                         <div id="status-dot-cwa" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 串接：CWA 中央氣象署
                     </div>
                     <div class="api-status flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors duration-300">
-                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 資料來源：NCDR 淹水潛勢圖資
+                        <div id="status-dot-ncdr" class="status-dot w-2 h-2 rounded-full bg-slate-500"></div> 資料來源：社宅適宜性評估報告
                     </div>
                 </div>
                 
@@ -417,14 +414,15 @@
                         <div class="flex flex-col gap-4">
                             <div class="bg-slate-800/50 border border-slate-700 p-4 rounded-xl h-full flex flex-col">
                                 <h3 class="font-bold text-white mb-3 flex items-center justify-between">
-                                    <span><i class="fa-solid fa-layer-group text-blue-400 mr-2"></i>淹水潛勢圖資檢視</span>
-                                    <span class="text-xs text-slate-400 font-normal border border-slate-600 px-2 py-0.5 rounded">原始圖檔模式</span>
+                                    <span><i class="fa-solid fa-layer-group text-blue-400 mr-2"></i>綜合適宜性評估圖資</span>
+                                    <span class="text-xs text-slate-400 font-normal border border-slate-600 px-2 py-0.5 rounded">靜態疊圖模式</span>
                                 </h3>
                                 
                                 <div class="mb-3">
-                                    <label class="text-xs text-slate-400 block mb-1">選擇降雨情境：</label>
+                                    <label class="text-xs text-slate-400 block mb-1">選擇分析圖資：</label>
                                     <select id="flood-scenario-select" onchange="updateFloodImage(this.value)" class="w-full bg-slate-700 text-white text-base p-3 rounded-lg outline-none border border-slate-600 focus:border-brand-green transition">
                                     </select>
+                                    <p id="image-desc" class="text-sm text-brand-green mt-2 font-bold bg-slate-700/50 p-2 rounded"></p>
                                 </div>
 
                                 <div class="map-viewer-container flex-grow bg-slate-900 border border-slate-700 relative group" id="map-viewer-container">
@@ -440,7 +438,7 @@
                                     <div id="image-error-msg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 hidden bg-slate-800">
                                         <i class="fa-regular fa-image-slash text-4xl mb-2"></i>
                                         <p class="text-sm">找不到圖檔</p>
-                                        <p class="text-xs mt-1">請確認 jpg 檔案位於同一目錄</p>
+                                        <p class="text-xs mt-1">請確認 jpg 檔案位於 images 目錄</p>
                                     </div>
 
                                     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition duration-300">
@@ -451,7 +449,7 @@
                                 </div>
                                 
                                 <p class="text-xs text-slate-400 mt-2 text-center">
-                                    * 因圖資檔案較大，切換圖資請耐心等候；可使用滾輪縮放指定區域，按住左鍵拖曳移動。
+                                    可使用滾輪縮放指定區域，按住左鍵拖曳移動。深色區域代表高適宜性。
                                 </p>
                             </div>
                         </div>
@@ -460,7 +458,7 @@
                     
                     <div class="mt-8 flex justify-center">
                         <div class="bg-brand-green p-4 rounded-xl text-center cursor-pointer hover:bg-emerald-600 transition w-full md:w-auto px-12 shadow-lg shadow-emerald-900/20" onclick="document.getElementById('demo-sim').scrollIntoView({behavior: 'smooth'})">
-                            <p class="font-bold text-white text-lg"><i class="fa-solid fa-arrow-right mr-2"></i> 前往 NbS 選物店改善</p>
+                            <p class="font-bold text-white text-lg"><i class="fa-solid fa-arrow-down mr-2"></i> 既有社區如何改善？前往 NbS 選物店</p>
                         </div>
                     </div>
 
@@ -471,6 +469,15 @@
 
     <section id="demo-sim" class="py-20 bg-slate-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center mb-16">
+                <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02 - 模組 B</span>
+                <h2 class="text-3xl md:text-4xl font-bold mt-2 text-slate-900">微觀 NbS 改造與補助試算</h2>
+                <p class="text-slate-600 mt-4 max-w-3xl mx-auto text-lg">
+                    除了新建社宅，全台有百萬棟既有建築正面臨氣候考驗。本模組內建各縣市補助資料庫，以下我們以「新北市低碳社區改造補助計畫」為例，展示民間社區如何評估 NbS 導入效益並爭取經費。
+                </p>
+            </div>
+
             <div class="flex flex-col-reverse md:flex-row gap-12 items-start relative">
                 
                 <div class="w-full md:w-2/3 bg-white rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden flex flex-col sticky top-24">
@@ -526,10 +533,9 @@
 
                 <div class="w-full md:w-1/3 space-y-8">
                     <div>
-                        <span class="text-brand-green font-bold tracking-wider uppercase text-sm">Interactive Demo 02</span>
-                        <h2 class="text-3xl font-bold mt-2 text-slate-900">NbS 選物店</h2>
-                        <p class="text-slate-600 mt-4" id="sim-desc">
-                            從下方「選物區」挑選適合的解決方案，即時預覽氣候調適效益。
+                        <h3 class="text-2xl font-bold text-slate-900"><i class="fa-solid fa-store text-brand-green mr-2"></i>NbS 選物店</h3>
+                        <p class="text-slate-600 mt-2 text-sm" id="sim-desc">
+                            從下方挑選適合的解決方案，即時預估改造成本與新北市府補助金額。
                         </p>
                     </div>
 
@@ -555,7 +561,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-store text-brand-green mr-1"></i> 選物區：改造方案</label>
+                            <label class="block text-sm font-bold text-slate-700 mb-3">選物區：改造方案</label>
                             <div class="grid grid-cols-1 gap-3" id="selection-shop-cards">
                                 <div class="select-card active bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3" onclick="selectSolution('nbs', this)">
                                     <div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-green flex-shrink-0">
@@ -642,8 +648,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <span class="text-brand-green font-bold tracking-widest uppercase text-sm bg-brand-light px-3 py-1 rounded-full mb-3 inline-block">CASES</span>
-                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">低碳社區合作案例</h2>
-                <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證綠色改造的實際成果。</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">平台先期導入測試案例 (PoC)</h2>
+                <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證平台如何從宏觀選址走向微觀的綠色改造落地實績。</p>
             </div>
 
             <div class="flex justify-center">
@@ -653,13 +659,14 @@
                         <img src="assets/logo/logo_header.png" alt="麗寶萊茵社區" class="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400?text=Community+Logo'">
                     </div>
                     <div class="p-6 text-center">
-                        <div class="mb-4">
+                        <div class="mb-2">
+                            <span class="inline-block bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded mb-2">新北市微觀改造示範</span>
                             <h3 class="text-3xl font-black text-slate-800">
                                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-500">麗寶萊茵</span>
                             </h3>
                         </div>
                         <p class="text-slate-500 text-base mb-6 leading-relaxed">
-                            運用數位工具盤點社區生態與節能設施，打造與自然共生的永續生活環境。
+                            實際應用本平台「模組 B」盤點社區生態與節能設施，打造與自然共生的永續生活環境。
                         </p>
                         <div class="inline-flex items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
                             <span>瀏覽案例社區官網</span>
@@ -688,12 +695,10 @@
         </div>
     </footer>
 
-    <!-- Helper Bot Button -->
     <div class="helper-btn" onclick="toggleHelperModal()">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
     </div>
 
-    <!-- Helper Modal -->
     <div id="helperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm" onclick="toggleHelperModal()">
         <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl transform transition-all scale-100" onclick="event.stopPropagation()">
             <div class="text-center mb-6">
@@ -884,17 +889,15 @@
         };
 
         const IMAGE_PATH = './images/';
-        const FLOOD_DATA = {
-            '6H150R': { file: '新北6H150R.jpg', name: '6小時 150mm' },
-            '6H250R': { file: '新北6H250R.jpg', name: '6小時 250mm' },
-            '6H350R': { file: '新北6H350R.jpg', name: '6小時 350mm' },
-            '12H200R': { file: '新北12H200R.jpg', name: '12小時 200mm' },
-            '12H300R': { file: '新北12H300R.jpg', name: '12小時 300mm' },
-            '12H400R': { file: '新北12H400R.jpg', name: '12小時 400mm' },
-            '24H200R': { file: '新北24H200R.jpg', name: '24小時 200mm' },
-            '24H350R': { file: '新北24H350R.jpg', name: '24小時 350mm' },
-            '24H500R': { file: '新北24H500R.jpg', name: '24小時 500mm' },
-            '24H650R': { file: '新北24H650R.jpg', name: '24小時 650mm' }
+        const REPORT_IMAGES = {
+            'ALL': { file: 'taipei_all.jpg', name: '臺北市全區適宜性分析', desc: '深藍色為高適宜區(等級3)，淺藍色為中適宜區(等級2)' },
+            'WENSHAN': { file: 'taipei_wenshan.jpg', name: '文山區 (辛亥萬芳)', desc: '公有地多為闊葉林、公園綠地及山坡地，開發成本較高' },
+            'DAAN': { file: 'taipei_daan.jpg', name: '大安區 (敦化仁愛圓環)', desc: '高度開發區，公有地多為學校、文教設施及公園' },
+            'NEIHU': { file: 'taipei_neihu.jpg', name: '內湖區 (大湖公園/內湖交流道)', desc: '公有地多為山坡地，現況皆為闊葉林' },
+            'WANHUA': { file: 'taipei_wanhua.jpg', name: '萬華區 (雙園國小)', desc: '建成區，公有空地稀少，現況多為公園及學校' },
+            'ZHONGSHAN': { file: 'taipei_zhongshan.jpg', name: '中山區 (文湖國小)', desc: '劍南路站旁有廣場，其餘公有空地多為闊葉林且為山坡地' },
+            'SHILIN': { file: 'taipei_shilin.jpg', name: '士林區 (士林官邸/法官學院)', desc: '推薦基地：法官學院周邊街廓完整，軟橋段88、93號地尚未使用' },
+            'BEITOU': { file: 'taipei_beitou.jpg', name: '北投區 (淡水信義線)', desc: '區域公有空地多為公園及學校' }
         };
 
         const COST_DB = {
@@ -949,8 +952,6 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("TanJi Platform v2.4 Loaded");
-
             map = L.map('risk-map').setView([25.012, 121.465], 11);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -959,11 +960,11 @@
 
             const select = document.getElementById('flood-scenario-select');
             select.innerHTML = ''; 
-            let defaultKey = '24H350R';
-            Object.keys(FLOOD_DATA).forEach(key => {
+            let defaultKey = 'ALL';
+            Object.keys(REPORT_IMAGES).forEach(key => {
                 const opt = document.createElement('option');
                 opt.value = key;
-                opt.text = FLOOD_DATA[key].name;
+                opt.text = REPORT_IMAGES[key].name;
                 if(key === defaultKey) opt.selected = true;
                 select.appendChild(opt);
             });
@@ -995,7 +996,6 @@
                 updateViewerTransform();
             });
 
-            // Mouse Events
             container.addEventListener('mousedown', (e) => {
                 viewerState.isDragging = true;
                 viewerState.startX = e.clientX - viewerState.x;
@@ -1016,7 +1016,6 @@
                 container.style.cursor = 'grab';
             });
 
-            // Touch Events for Mobile
             container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     viewerState.isDragging = true;
@@ -1027,7 +1026,7 @@
 
             container.addEventListener('touchmove', (e) => {
                 if (!viewerState.isDragging) return;
-                e.preventDefault(); // Prevent page scroll while dragging image
+                e.preventDefault();
                 if (e.touches.length === 1) {
                     viewerState.x = e.touches[0].clientX - viewerState.startX;
                     viewerState.y = e.touches[0].clientY - viewerState.startY;
@@ -1096,13 +1095,14 @@
         }
 
         function updateFloodImage(key) {
-            const data = FLOOD_DATA[key];
+            const data = REPORT_IMAGES[key];
             if (!data) return;
 
             const imageUrl = IMAGE_PATH + data.file;
             const imgViewer = document.getElementById('flood-image-viewer');
             const errorMsg = document.getElementById('image-error-msg');
             const downloadBtn = document.getElementById('download-map-btn');
+            const descP = document.getElementById('image-desc');
 
             imgViewer.classList.remove('hidden');
             errorMsg.classList.add('hidden');
@@ -1113,10 +1113,12 @@
             
             imgViewer.src = imageUrl;
             downloadBtn.href = imageUrl;
+            descP.innerText = data.desc;
 
             imgViewer.onerror = function() {
                 imgViewer.classList.add('hidden');
                 errorMsg.classList.remove('hidden');
+                descP.innerText = "";
             };
         }
 
@@ -1150,7 +1152,7 @@
                     const data = await res.json();
                     if(data.length > 0) return data[0];
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) {}
             return null;
         }
 
@@ -1201,7 +1203,7 @@
                         geoData = await geoRes.json();
                         locationName = geoData.name;
                     } else {
-                        throw new Error("Backend geocode failed");
+                        throw new Error();
                     }
                 } catch (backendErr) {
                     let osmRaw = await fetchOSM("台灣 " + userInput);
@@ -1220,7 +1222,7 @@
                     }
                 }
 
-                if (!geoData) throw new Error("地址定位失敗");
+                if (!geoData) throw new Error();
                 if (geoData.lat < 21 || geoData.lat > 26 || geoData.lng < 119 || geoData.lng > 123) {
                     statusMsg.innerText = "⚠️ 警告：定位結果似乎在台灣境外";
                 }
@@ -1237,7 +1239,7 @@
                 const weatherRes = await fetch(`${backendUrl}/api/weather`, { signal: controllerWeather.signal });
                 clearTimeout(timeoutIdWeather);
 
-                if (!weatherRes.ok) throw new Error("氣象連線失敗");
+                if (!weatherRes.ok) throw new Error();
                 const weatherRaw = await weatherRes.json();
                 
                 let weatherData = null;
@@ -1257,7 +1259,7 @@
                 }
 
                 cwaDot.classList.remove('animate-ping');
-                statusMsg.innerText = "正在載入本地災害圖資...";
+                statusMsg.innerText = "正在載入分析圖資...";
                 ncdrDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 ncdrDot.classList.add('animate-ping');
                 
@@ -1268,6 +1270,15 @@
                 resultDiv.classList.remove('hidden');
                 void resultDiv.offsetWidth; 
                 resultDiv.classList.remove('opacity-0', 'translate-y-4');
+
+                let matchedKey = 'ALL';
+                if(locationData.name.includes('文山區')) matchedKey = 'WENSHAN';
+                else if(locationData.name.includes('大安區')) matchedKey = 'DAAN';
+                else if(locationData.name.includes('內湖區')) matchedKey = 'NEIHU';
+                else if(locationData.name.includes('萬華區')) matchedKey = 'WANHUA';
+                else if(locationData.name.includes('中山區')) matchedKey = 'ZHONGSHAN';
+                else if(locationData.name.includes('士林區')) matchedKey = 'SHILIN';
+                else if(locationData.name.includes('北投區')) matchedKey = 'BEITOU';
 
                 setTimeout(() => {
                     if(map) {
@@ -1281,16 +1292,16 @@
                 }, 100);
                 
                 const select = document.getElementById('flood-scenario-select');
-                updateFloodImage(select.value);
+                select.value = matchedKey;
+                updateFloodImage(matchedKey);
 
                 statusMsg.innerText = "分析完成！圖資已載入";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
-                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Local Images`;
+                document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Report Images`;
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
 
             } catch (e) {
-                console.error(e);
                 const mock = getMockTemp();
                 statusMsg.innerText = "連線異常，切換至模擬模式";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
@@ -1300,11 +1311,21 @@
                 void resultDiv.offsetWidth; 
                 resultDiv.classList.remove('opacity-0', 'translate-y-4');
 
+                let matchedKey = 'ALL';
+                if(userInput.includes('文山區')) matchedKey = 'WENSHAN';
+                else if(userInput.includes('大安區')) matchedKey = 'DAAN';
+                else if(userInput.includes('內湖區')) matchedKey = 'NEIHU';
+                else if(userInput.includes('萬華區')) matchedKey = 'WANHUA';
+                else if(userInput.includes('中山區')) matchedKey = 'ZHONGSHAN';
+                else if(userInput.includes('士林區')) matchedKey = 'SHILIN';
+                else if(userInput.includes('北投區')) matchedKey = 'BEITOU';
+
                 setTimeout(() => {
                     if(map) {
                         map.invalidateSize();
                         const select = document.getElementById('flood-scenario-select');
-                        updateFloodImage(select.value);
+                        select.value = matchedKey;
+                        updateFloodImage(matchedKey);
                     }
                     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
