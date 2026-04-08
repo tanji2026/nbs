@@ -652,28 +652,55 @@
                 <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證平台如何從宏觀選址走向微觀的綠色改造落地實績。</p>
             </div>
 
-            <div class="flex justify-center">
-                <a href="https://tanji2026.github.io/wonderfulplace" target="_blank" class="w-full max-w-md group block bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden">
+            <!-- 修改為支援並排顯示的容器 -->
+            <div class="flex flex-col md:flex-row justify-center items-stretch gap-8">
+                
+                <!-- 第一個卡片：麗寶萊茵 -->
+                <a href="https://tanji2026.github.io/wonderfulplace" target="_blank" class="w-full max-w-md group flex flex-col bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden shrink-0">
                         <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
                         <img src="assets/logo/logo_header.png" alt="麗寶萊茵社區" class="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400?text=Community+Logo'">
                     </div>
-                    <div class="p-6 text-center">
+                    <div class="p-6 text-center flex flex-col flex-grow">
                         <div class="mb-2">
                             <span class="inline-block bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded mb-2">新北市微觀改造示範</span>
                             <h3 class="text-3xl font-black text-slate-800">
                                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-500">麗寶萊茵</span>
                             </h3>
                         </div>
-                        <p class="text-slate-500 text-base mb-6 leading-relaxed">
+                        <p class="text-slate-500 text-base mb-6 leading-relaxed flex-grow">
                             實際應用本平台「模組 B」盤點社區生態與節能設施，打造與自然共生的永續生活環境。
                         </p>
-                        <div class="inline-flex items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
+                        <div class="inline-flex mx-auto mt-auto items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
                             <span>瀏覽案例社區官網</span>
                             <i class="fa-solid fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
                         </div>
                     </div>
                 </a>
+
+                <!-- 第二個卡片：低碳社區標章認證平台 -->
+                <a href="https://tanji2026.github.io/livinglab/" target="_blank" class="w-full max-w-md group flex flex-col bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden shrink-0">
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
+                        <img src="assets/logo/logo_certification.png" alt="低碳社區標章認證" class="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400?text=Certification+Logo'">
+                    </div>
+                    <div class="p-6 text-center flex flex-col flex-grow">
+                        <div class="mb-2">
+                            <span class="inline-block bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded mb-2">115年度申請輔助</span>
+                            <h3 class="text-3xl font-black text-slate-800">
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">低碳自評試算</span>
+                            </h3>
+                        </div>
+                        <p class="text-slate-500 text-base mb-6 leading-relaxed flex-grow">
+                            依據預估指標細項，自動計算標章落點與補助資格，並提供照片工作台一鍵匯出佐證計畫書。
+                        </p>
+                        <div class="inline-flex mx-auto mt-auto items-center justify-center px-6 py-2 bg-brand-green text-white rounded-full font-bold text-sm group-hover:bg-brand-dark transition-colors shadow-md shadow-emerald-100">
+                            <span>開啟評估工具</span>
+                            <i class="fa-solid fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                </a>
+
             </div>
         </div>
     </section>
