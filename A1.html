@@ -7,6 +7,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 引入 html2canvas 用於將畫面轉為圖片 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&family=Zen+Dots&display=swap" rel="stylesheet">
     
     <style>
@@ -75,20 +77,17 @@
             }
             .no-print { display: none !important; }
             
-            /* 修正瀏覽器匯出 PDF 時 backdrop-filter 導致文字/元素消失的 Bug */
             * {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
-            /* 毛玻璃背景在列印時轉為純色，確保白字清晰可見 */
             .bg-slate-900\/80 { background-color: #0f172a !important; }
             .bg-slate-800\/80 { background-color: #1e293b !important; }
             .bg-slate-800\/60 { background-color: #1e293b !important; }
 
-            /* 修正漸層文字在 PDF 匯出時變透明/消失的 Bug */
             .text-transparent {
                 background: none !important;
-                -webkit-text-fill-color: #34d399 !important; /* 替換為純色 emerald-400 */
+                -webkit-text-fill-color: #34d399 !important; 
                 color: #34d399 !important;
             }
         }
@@ -96,9 +95,21 @@
 </head>
 <body>
 
-    <div class="no-print bg-slate-800 text-white px-6 py-3 rounded-full mb-8 shadow-lg flex items-center gap-3">
-        <i data-lucide="printer" class="w-5 h-5 text-emerald-400"></i>
-        <span>目前為畫面縮放預覽模式。列印 / 匯出 PDF 時，請將紙張尺寸設為 <strong>A1</strong> 並將邊界設為 <strong>無 (0)</strong>。</span>
+    <!-- 頂部控制列 -->
+    <div class="no-print bg-slate-800 text-white px-6 py-4 rounded-2xl mb-8 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 w-full max-w-4xl border border-slate-700">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-emerald-500/20 rounded-lg">
+                <i data-lucide="image" class="w-6 h-6 text-emerald-400"></i>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-bold text-lg">海報輸出工具</span>
+                <span class="text-sm text-slate-400">點擊右側按鈕，直接將下方海報輸出為 100% 原始尺寸 (A1) 的 PNG 高畫質圖片。</span>
+            </div>
+        </div>
+        <button onclick="downloadPoster()" id="downloadBtn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold px-6 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="download" class="w-5 h-5"></i>
+            <span>下載高畫質 PNG</span>
+        </button>
     </div>
 
     <!-- 海報主體 -->
@@ -141,7 +152,7 @@
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">綠色氣候防護衣</span>
                 </h3>
                 <p class="text-[48px] text-slate-400 leading-relaxed mb-[100px]">
-                    全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，協助公部門與管委會從「宏觀圖資診斷」到「微觀改造補助」一站式完成。
+                    全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，協助管委會與物管公司從「宏觀圖資診斷」到「微觀改造補助」。
                 </p>
 
                 <p class="text-[28px] font-bold text-slate-500 uppercase tracking-widest mb-[40px]">SYSTEM MODULES</p>
@@ -171,7 +182,7 @@
 
             <!-- 右側大型雷達視覺 -->
             <div class="absolute right-[80px] top-[60px] z-10 flex flex-col items-end">
-                <!-- 加上 print:hidden 隱藏極耗資源的超大光暈，避免 PDF 渲染失敗 -->
+                <!-- 加上 print:hidden 隱藏極耗資源的超大光暈 -->
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none print:hidden"></div>
                 
                 <div class="relative w-[900px] h-[900px] bg-slate-900/80 backdrop-blur-md border-[4px] border-slate-700 rounded-full shadow-[0_0_80px_rgba(16,185,129,0.15)] flex flex-col items-center justify-center overflow-hidden">
@@ -190,9 +201,6 @@
                     <div class="relative z-10 text-center mt-[40px]">
                         <div class="text-[200px] font-black text-white leading-none">85.2</div>
                         <div class="text-[36px] text-slate-400 uppercase tracking-widest mt-[20px] font-bold">NbS Resilience</div>
-                    </div>
-                    <div class="absolute top-[80px] right-[120px] bg-emerald-500 text-slate-900 text-[28px] font-bold px-[24px] py-[8px] rounded-xl transform rotate-12">
-                        LIVE
                     </div>
                 </div>
 
@@ -286,14 +294,61 @@
             
             // 計算視窗與海報的比例，留一點邊距 (0.95)
             const scaleX = window.innerWidth / targetWidth;
-            const scaleY = (window.innerHeight - 100) / targetHeight; 
+            const scaleY = (window.innerHeight - 150) / targetHeight; 
             const scale = Math.min(scaleX, scaleY) * 0.95;
 
-            // 只在螢幕顯示時縮放，列印時 CSS 的 @media print 會覆蓋此設定
+            // 只在螢幕顯示時縮放
             poster.style.transform = `scale(${scale})`;
             
             // 調整 body 的高度以符合縮放後的海報高度，避免多餘空白
-            document.body.style.minHeight = `${targetHeight * scale + 100}px`;
+            document.body.style.minHeight = `${targetHeight * scale + 150}px`;
+        }
+
+        // 圖片下載功能 (使用 html2canvas 匯出 100% 原始尺寸)
+        async function downloadPoster() {
+            const btn = document.getElementById('downloadBtn');
+            const originalContent = btn.innerHTML;
+            const poster = document.getElementById('poster');
+            
+            // 狀態變更：處理中
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>處理中，請稍候...</span>';
+            btn.disabled = true;
+            lucide.createIcons(); // 讓載入的 icon 旋轉
+
+            try {
+                // 1. 暫時移除 CSS 縮放，確保 html2canvas 抓取到 2245x3179 真實尺寸
+                const currentTransform = poster.style.transform;
+                poster.style.transform = 'none';
+                
+                // 等待一下讓瀏覽器重新計算排版
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // 2. 轉換為 Canvas
+                const canvas = await html2canvas(poster, {
+                    scale: 1, // 維持 1 倍，因為海報本身已經是 A1 像素尺寸
+                    useCORS: true,
+                    backgroundColor: '#0f172a',
+                    logging: false
+                });
+
+                // 3. 恢復縮放
+                poster.style.transform = currentTransform;
+
+                // 4. 下載為 PNG
+                const link = document.createElement('a');
+                link.download = '碳吉_TanJi_決策平台海報_A1.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+            } catch (error) {
+                console.error("輸出圖片失敗:", error);
+                alert("輸出圖片時發生錯誤，請確認是否有跨域資源 (CORS) 擋住。");
+            } finally {
+                // 恢復按鈕狀態
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
         }
 
         // 監聽視窗大小改變
