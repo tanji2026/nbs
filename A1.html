@@ -59,15 +59,38 @@
                 size: A1 portrait;
                 margin: 0;
             }
-            body { padding: 0; background: none; display: block; }
+            body { 
+                padding: 0; 
+                background: #0f172a !important; 
+                display: block; 
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             .poster { 
-                transform: scale(1) !important; 
+                transform: none !important; 
                 box-shadow: none; 
-                width: 100vw; 
-                height: 100vh; 
+                width: 594mm !important; 
+                height: 841mm !important; 
                 page-break-after: avoid;
             }
             .no-print { display: none !important; }
+            
+            /* 修正瀏覽器匯出 PDF 時 backdrop-filter 導致文字/元素消失的 Bug */
+            * {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+            /* 毛玻璃背景在列印時轉為純色，確保白字清晰可見 */
+            .bg-slate-900\/80 { background-color: #0f172a !important; }
+            .bg-slate-800\/80 { background-color: #1e293b !important; }
+            .bg-slate-800\/60 { background-color: #1e293b !important; }
+
+            /* 修正漸層文字在 PDF 匯出時變透明/消失的 Bug */
+            .text-transparent {
+                background: none !important;
+                -webkit-text-fill-color: #34d399 !important; /* 替換為純色 emerald-400 */
+                color: #34d399 !important;
+            }
         }
     </style>
 </head>
@@ -148,7 +171,8 @@
 
             <!-- 右側大型雷達視覺 -->
             <div class="absolute right-[80px] top-[60px] z-10 flex flex-col items-end">
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none"></div>
+                <!-- 加上 print:hidden 隱藏極耗資源的超大光暈，避免 PDF 渲染失敗 -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none print:hidden"></div>
                 
                 <div class="relative w-[900px] h-[900px] bg-slate-900/80 backdrop-blur-md border-[4px] border-slate-700 rounded-full shadow-[0_0_80px_rgba(16,185,129,0.15)] flex flex-col items-center justify-center overflow-hidden">
                     <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
