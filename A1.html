@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳吉 TanJi - 決策平台海報 (A1 直式)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&family=Zen+Dots&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background: #94a3b8; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 40px; 
+            min-height: 100vh;
+            margin: 0;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+        }
+        
+        /* A1 直式尺寸: 594mm x 841mm */
+        .poster {
+            width: 594mm;
+            height: 841mm;
+            background: #0f172a;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            transform-origin: top center;
+        }
+
+        .font-tech { font-family: 'Zen Dots', cursive; }
+        
+        .bg-grid {
+            background-size: 100px 100px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.3);
+        }
+
+        /* 列印設定：消除螢幕預覽的縮放，還原 A1 真實尺寸 */
+        @media print {
+            @page {
+                size: A1 portrait;
+                margin: 0;
+            }
+            body { padding: 0; background: none; display: block; }
+            .poster { 
+                transform: scale(1) !important; 
+                box-shadow: none; 
+                width: 100vw; 
+                height: 100vh; 
+                page-break-after: avoid;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print bg-slate-800 text-white px-6 py-3 rounded-full mb-8 shadow-lg flex items-center gap-3">
+        <i data-lucide="printer" class="w-5 h-5 text-emerald-400"></i>
+        <span>目前為畫面縮放預覽模式。列印 / 匯出 PDF 時，請將紙張尺寸設為 <strong>A1</strong> 並將邊界設為 <strong>無 (0)</strong>。</span>
+    </div>
+
+    <!-- 海報主體 -->
+    <div class="poster" id="poster">
+        <div class="bg-grid"></div>
+        
+        <!-- 頂部標題區 -->
+        <header class="relative z-10 p-[80px] pb-[40px] border-b-[3px] border-slate-800 flex justify-between items-start">
+            <div>
+                <div class="inline-block px-[32px] py-[12px] bg-emerald-500/20 border-[3px] border-emerald-500/50 rounded-full text-emerald-400 text-[36px] font-bold mb-[40px] tracking-wider">
+                    115年度 氣候變遷創意實作競賽
+                </div>
+                <h1 class="text-[200px] font-black leading-none tracking-tight mb-[20px]">
+                    碳吉 <span class="font-tech text-emerald-400 neon-text">TanJi</span>
+                </h1>
+                <h2 class="text-[64px] font-bold text-slate-400">社區微氣候韌性與 NbS 決策平台</h2>
+            </div>
+            
+            <div class="text-right">
+                <div class="flex gap-[16px] justify-end mb-[24px] mt-[20px]">
+                    <div class="w-[24px] h-[24px] bg-red-500 rounded-full animate-pulse"></div>
+                    <div class="w-[24px] h-[24px] bg-yellow-500 rounded-full"></div>
+                    <div class="w-[24px] h-[24px] bg-emerald-500 rounded-full"></div>
+                </div>
+                <div class="text-[32px] font-mono text-slate-500 leading-relaxed text-right">
+                    SYS.STATUS: ONLINE<br>
+                    DATA: CWA & STATIC MAPS<br>
+                    NBS.ENGINE: ACTIVE
+                </div>
+            </div>
+        </header>
+
+        <!-- 中間視覺與簡介區 -->
+        <div class="relative z-10 flex-grow px-[80px] pt-[80px] flex">
+            
+            <!-- 左側文字與模組 -->
+            <div class="w-[1000px] pt-[40px] relative z-20">
+                <h3 class="text-[72px] font-bold leading-snug mb-[40px]">
+                    為您的社區穿上<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">綠色氣候防護衣</span>
+                </h3>
+                <p class="text-[48px] text-slate-400 leading-relaxed mb-[100px]">
+                    全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，協助公部門與管委會從「宏觀圖資診斷」到「微觀改造補助」一站式完成。
+                </p>
+
+                <p class="text-[28px] font-bold text-slate-500 uppercase tracking-widest mb-[40px]">SYSTEM MODULES</p>
+                <div class="flex gap-[40px]">
+                    <div class="text-center">
+                        <div class="w-[140px] h-[140px] rounded-full bg-blue-900/50 border-[4px] border-blue-500 flex items-center justify-center mb-[24px]"><i data-lucide="cloud-rain" style="width: 64px; height: 64px;" class="text-blue-400"></i></div>
+                        <span class="text-[28px] font-bold text-blue-400">氣象署資料</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-[140px] h-[140px] rounded-full bg-slate-800 border-[4px] border-slate-500 flex items-center justify-center mb-[24px]"><i data-lucide="layers" style="width: 64px; height: 64px;" class="text-slate-400"></i></div>
+                        <span class="text-[28px] font-bold text-slate-400">靜態疊圖</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-[140px] h-[140px] rounded-full bg-purple-900/50 border-[4px] border-purple-500 flex items-center justify-center mb-[24px]"><i data-lucide="cpu" style="width: 64px; height: 64px;" class="text-purple-400"></i></div>
+                        <span class="text-[28px] font-bold text-purple-400">運算引擎</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-[140px] h-[140px] rounded-full bg-emerald-900/50 border-[4px] border-emerald-500 flex items-center justify-center mb-[24px]"><i data-lucide="trees" style="width: 64px; height: 64px;" class="text-emerald-400"></i></div>
+                        <span class="text-[28px] font-bold text-emerald-400">自然解方</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-[140px] h-[140px] rounded-full bg-amber-900/50 border-[4px] border-amber-500 flex items-center justify-center mb-[24px]"><i data-lucide="piggy-bank" style="width: 64px; height: 64px;" class="text-amber-400"></i></div>
+                        <span class="text-[28px] font-bold text-amber-400">補助評估</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側大型雷達視覺 -->
+            <div class="absolute right-[80px] top-[60px] z-10 flex flex-col items-end">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none"></div>
+                
+                <div class="relative w-[900px] h-[900px] bg-slate-900/80 backdrop-blur-md border-[4px] border-slate-700 rounded-full shadow-[0_0_80px_rgba(16,185,129,0.15)] flex flex-col items-center justify-center overflow-hidden">
+                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="0.5"/>
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="0.5"/>
+                        <circle cx="50" cy="50" r="15" fill="none" stroke="white" stroke-width="0.5"/>
+                        <line x1="50" y1="50" x2="50" y2="5" stroke="white" stroke-width="0.5"/>
+                        <line x1="50" y1="50" x2="89" y2="72.5" stroke="white" stroke-width="0.5"/>
+                        <line x1="50" y1="50" x2="11" y2="72.5" stroke="white" stroke-width="0.5"/>
+                    </svg>
+                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full drop-shadow-[0_0_20px_rgba(16,185,129,0.8)] pointer-events-none">
+                        <polygon points="50,18 78,65 35,70" fill="rgba(16, 185, 129, 0.4)" stroke="#10b981" stroke-width="1.5"/>
+                    </svg>
+
+                    <div class="relative z-10 text-center mt-[40px]">
+                        <div class="text-[200px] font-black text-white leading-none">85.2</div>
+                        <div class="text-[36px] text-slate-400 uppercase tracking-widest mt-[20px] font-bold">NbS Resilience</div>
+                    </div>
+                    <div class="absolute top-[80px] right-[120px] bg-emerald-500 text-slate-900 text-[28px] font-bold px-[24px] py-[8px] rounded-xl transform rotate-12">
+                        LIVE
+                    </div>
+                </div>
+
+                <!-- 數據方塊 -->
+                <div class="w-[900px] flex justify-between gap-[32px] mt-[60px]">
+                    <div class="bg-slate-800/80 backdrop-blur-lg rounded-[40px] p-[40px] border-[3px] border-slate-700 flex-1 text-center shadow-xl">
+                        <div class="text-[32px] text-slate-400 mb-[16px] font-bold">環境降溫</div>
+                        <div class="text-[72px] font-black text-white">-2.5°C</div>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur-lg rounded-[40px] p-[40px] border-[3px] border-slate-700 flex-1 text-center shadow-xl">
+                        <div class="text-[32px] text-slate-400 mb-[16px] font-bold">暴雨保水</div>
+                        <div class="text-[72px] font-black text-white">80%</div>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur-lg rounded-[40px] p-[40px] border-[3px] border-emerald-500/50 flex-1 text-center shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                        <div class="text-[32px] text-slate-400 mb-[16px] font-bold">補助爭取</div>
+                        <div class="text-[72px] font-black text-emerald-400">Max</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部特色介紹區 (三欄) -->
+        <div class="relative z-10 grid grid-cols-3 gap-[60px] px-[80px] mt-auto mb-[80px]">
+            
+            <div class="bg-slate-800/60 backdrop-blur-md p-[60px] border-[3px] border-slate-700 rounded-[50px] shadow-2xl">
+                <div class="w-[140px] h-[140px] bg-slate-900 border-[3px] border-emerald-500 rounded-[40px] flex items-center justify-center mb-[40px] shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
+                    <i data-lucide="thermometer-sun" style="width: 72px; height: 72px;" class="text-emerald-400"></i>
+                </div>
+                <h3 class="text-[56px] font-bold text-white mb-[32px]">氣候風險快篩</h3>
+                <p class="text-[36px] text-slate-400 leading-[1.6]">
+                    整合氣象署觀測數據與適宜性靜態疊圖，讓管委會快速檢測社區周邊的極端高溫與環境脆弱度。
+                </p>
+            </div>
+
+            <div class="bg-slate-800/60 backdrop-blur-md p-[60px] border-[3px] border-slate-700 rounded-[50px] shadow-2xl">
+                <div class="w-[140px] h-[140px] bg-slate-900 border-[3px] border-blue-500 rounded-[40px] flex items-center justify-center mb-[40px] shadow-[0_10px_30px_rgba(59,130,246,0.3)]">
+                    <i data-lucide="leaf" style="width: 72px; height: 72px;" class="text-blue-400"></i>
+                </div>
+                <h3 class="text-[56px] font-bold text-white mb-[32px]">微觀 NbS 模擬</h3>
+                <p class="text-[36px] text-slate-400 leading-[1.6]">
+                    告別枯燥文字！針對建築現況提供綠屋頂、透水鋪面等自然解方，視覺化展示環境降溫與保水成效。
+                </p>
+            </div>
+
+            <div class="bg-slate-800/60 backdrop-blur-md p-[60px] border-[3px] border-slate-700 rounded-[50px] shadow-2xl">
+                <div class="w-[140px] h-[140px] bg-slate-900 border-[3px] border-amber-500 rounded-[40px] flex items-center justify-center mb-[40px] shadow-[0_10px_30px_rgba(245,158,11,0.3)]">
+                    <i data-lucide="calculator" style="width: 72px; height: 72px;" class="text-amber-400"></i>
+                </div>
+                <h3 class="text-[56px] font-bold text-white mb-[32px]">改造補助試算</h3>
+                <p class="text-[36px] text-slate-400 leading-[1.6]">
+                    內建地方政府補助標準，依據施作面積自動換算建置成本、節能效益與預估回收年限，加速決策。
+                </p>
+            </div>
+
+        </div>
+
+        <!-- 頁尾 -->
+        <footer class="relative z-10 bg-slate-900 border-t-[4px] border-slate-800 p-[80px] flex items-center justify-between">
+            <div>
+                <p class="text-[36px] text-slate-400 font-bold mb-[16px] tracking-widest">適用對象</p>
+                <p class="text-[64px] font-black text-white mb-[16px]">物業管理公司、社區管委會、公部門</p>
+                <p class="text-[36px] text-slate-500">提供數據化評估，落實城市 ESG 永續發展目標</p>
+            </div>
+            
+            <div class="flex items-center gap-[40px]">
+                <div class="text-right">
+                    <p class="text-white font-black text-[64px] mb-[12px]">立即體驗</p>
+                    <p class="text-[36px] text-emerald-400 font-bold">掃描進入平台模擬器</p>
+                </div>
+                <div class="w-[320px] h-[320px] bg-white p-[24px] rounded-[40px] shadow-2xl flex items-center justify-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://tanji2026.github.io/nbs/" alt="TanJi Simulator QR Code" class="w-full h-full object-contain">
+                </div>
+            </div>
+            
+            <div class="absolute bottom-[24px] left-0 right-0 text-center">
+                <span class="text-[24px] text-slate-700 font-mono font-bold tracking-widest">Designed by 碳吉 TanJi Team</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 初始化 Lucide 圖示
+        lucide.createIcons();
+
+        // 自動縮放腳本：確保在電腦螢幕上預覽時可以看見整張 A1 海報
+        function scalePoster() {
+            const poster = document.getElementById('poster');
+            // A1 的固定解析度像素值 (根據寬度 594mm 換算約 2245px)
+            const targetWidth = 2245; 
+            const targetHeight = 3179;
+            
+            // 計算視窗與海報的比例，留一點邊距 (0.95)
+            const scaleX = window.innerWidth / targetWidth;
+            const scaleY = (window.innerHeight - 100) / targetHeight; 
+            const scale = Math.min(scaleX, scaleY) * 0.95;
+
+            // 只在螢幕顯示時縮放，列印時 CSS 的 @media print 會覆蓋此設定
+            poster.style.transform = `scale(${scale})`;
+            
+            // 調整 body 的高度以符合縮放後的海報高度，避免多餘空白
+            document.body.style.minHeight = `${targetHeight * scale + 100}px`;
+        }
+
+        // 監聽視窗大小改變
+        window.addEventListener('resize', scalePoster);
+        // 初始化縮放
+        scalePoster();
+    </script>
+</body>
+</html>
