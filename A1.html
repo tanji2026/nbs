@@ -7,7 +7,6 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- 引入 html2canvas 用於將畫面轉為圖片 -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&family=Zen+Dots&display=swap" rel="stylesheet">
     
@@ -25,7 +24,6 @@
             print-color-adjust: exact; 
         }
         
-        /* A1 直式尺寸: 594mm x 841mm */
         .poster {
             width: 594mm;
             height: 841mm;
@@ -55,6 +53,33 @@
             text-shadow: 0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.3);
         }
 
+        /* ========== 圖片輸出專用修復模式 ========== */
+        .export-mode * {
+            /* 強制關閉動畫，避免截圖瞬間元素處於透明狀態 */
+            animation: none !important;
+            transition: none !important;
+        }
+        
+        .export-mode .text-transparent {
+            /* 修復 html2canvas 無法渲染 bg-clip-text 變成奇怪方塊的 Bug，轉為純色 */
+            background: none !important;
+            -webkit-text-fill-color: #34d399 !important; 
+            color: #34d399 !important;
+        }
+
+        .export-mode .export-hide {
+            /* 隱藏極度耗費資源的超大光暈，避免破圖 */
+            display: none !important;
+        }
+
+        .export-mode .backdrop-blur-md,
+        .export-mode .backdrop-blur-lg {
+            /* 修復 html2canvas 會把毛玻璃變成不透明死黑的 Bug */
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background-color: #1e293b !important; /* 轉換為實體的 Slate-800 */
+        }
+
         /* 列印設定：消除螢幕預覽的縮放，還原 A1 真實尺寸 */
         @media print {
             @page {
@@ -76,20 +101,6 @@
                 page-break-after: avoid;
             }
             .no-print { display: none !important; }
-            
-            * {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-            }
-            .bg-slate-900\/80 { background-color: #0f172a !important; }
-            .bg-slate-800\/80 { background-color: #1e293b !important; }
-            .bg-slate-800\/60 { background-color: #1e293b !important; }
-
-            .text-transparent {
-                background: none !important;
-                -webkit-text-fill-color: #34d399 !important; 
-                color: #34d399 !important;
-            }
         }
     </style>
 </head>
@@ -152,7 +163,7 @@
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">綠色氣候防護衣</span>
                 </h3>
                 <p class="text-[48px] text-slate-400 leading-relaxed mb-[100px]">
-                    全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，協助管委會與物管公司從「宏觀圖資診斷」到「微觀改造補助」。
+                    全台適用的社區氣候韌性決策平台：結合 GIS 大數據與 NbS 自然解方，協助公部門與管委會從「宏觀圖資診斷」到「微觀改造補助」一站式完成。
                 </p>
 
                 <p class="text-[28px] font-bold text-slate-500 uppercase tracking-widest mb-[40px]">SYSTEM MODULES</p>
@@ -182,11 +193,12 @@
 
             <!-- 右側大型雷達視覺 -->
             <div class="absolute right-[80px] top-[60px] z-10 flex flex-col items-end">
-                <!-- 加上 print:hidden 隱藏極耗資源的超大光暈 -->
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none print:hidden"></div>
+                <!-- export-hide 隱藏極耗資源的超大光暈 -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none export-hide"></div>
                 
-                <div class="relative w-[900px] h-[900px] bg-slate-900/80 backdrop-blur-md border-[4px] border-slate-700 rounded-full shadow-[0_0_80px_rgba(16,185,129,0.15)] flex flex-col items-center justify-center overflow-hidden">
-                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
+                <!-- 移除了 flex 居中，改用純絕對定位以避免 html2canvas 跑位 -->
+                <div class="relative w-[900px] h-[900px] bg-slate-900/80 backdrop-blur-md border-[4px] border-slate-700 rounded-full shadow-[0_0_80px_rgba(16,185,129,0.15)] overflow-hidden block">
+                    <svg viewBox="0 0 100 100" class="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
                         <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="0.5"/>
                         <circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="0.5"/>
                         <circle cx="50" cy="50" r="15" fill="none" stroke="white" stroke-width="0.5"/>
@@ -194,12 +206,13 @@
                         <line x1="50" y1="50" x2="89" y2="72.5" stroke="white" stroke-width="0.5"/>
                         <line x1="50" y1="50" x2="11" y2="72.5" stroke="white" stroke-width="0.5"/>
                     </svg>
-                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full drop-shadow-[0_0_20px_rgba(16,185,129,0.8)] pointer-events-none">
+                    <svg viewBox="0 0 100 100" class="absolute top-0 left-0 w-full h-full drop-shadow-[0_0_20px_rgba(16,185,129,0.8)] pointer-events-none">
                         <polygon points="50,18 78,65 35,70" fill="rgba(16, 185, 129, 0.4)" stroke="#10b981" stroke-width="1.5"/>
                     </svg>
 
-                    <div class="relative z-10 text-center mt-[40px]">
-                        <div class="text-[200px] font-black text-white leading-none">85.2</div>
+                    <!-- 改用絕對定位固定 Y 軸高度，徹底解決文字偏移問題 -->
+                    <div class="absolute top-[400px] w-full text-center z-10">
+                        <div class="text-[200px] font-black text-white leading-none tracking-tight">85.2</div>
                         <div class="text-[36px] text-slate-400 uppercase tracking-widest mt-[20px] font-bold">NbS Resilience</div>
                     </div>
                 </div>
@@ -241,7 +254,7 @@
                 </div>
                 <h3 class="text-[56px] font-bold text-white mb-[32px]">微觀 NbS 模擬</h3>
                 <p class="text-[36px] text-slate-400 leading-[1.6]">
-                    告別枯燥文字！針對建築現況提供綠屋頂、透水鋪面等自然解方，展示環境降溫與保水成效。
+                    告別枯燥文字！針對建築現況提供綠屋頂、透水鋪面等自然解方，視覺化展示環境降溫與保水成效。
                 </p>
             </div>
 
@@ -251,7 +264,7 @@
                 </div>
                 <h3 class="text-[56px] font-bold text-white mb-[32px]">改造補助試算</h3>
                 <p class="text-[36px] text-slate-400 leading-[1.6]">
-                    內建地方政府補助標準，依據施作面積自動換算建置成本、節能效益與預估回收年限。
+                    內建地方政府補助標準，依據施作面積自動換算建置成本、節能效益與預估回收年限，加速決策。
                 </p>
             </div>
 
@@ -282,29 +295,21 @@
     </div>
 
     <script>
-        // 初始化 Lucide 圖示
         lucide.createIcons();
 
-        // 自動縮放腳本：確保在電腦螢幕上預覽時可以看見整張 A1 海報
         function scalePoster() {
             const poster = document.getElementById('poster');
-            // A1 的固定解析度像素值 (根據寬度 594mm 換算約 2245px)
             const targetWidth = 2245; 
             const targetHeight = 3179;
             
-            // 計算視窗與海報的比例，留一點邊距 (0.95)
             const scaleX = window.innerWidth / targetWidth;
             const scaleY = (window.innerHeight - 150) / targetHeight; 
             const scale = Math.min(scaleX, scaleY) * 0.95;
 
-            // 只在螢幕顯示時縮放
             poster.style.transform = `scale(${scale})`;
-            
-            // 調整 body 的高度以符合縮放後的海報高度，避免多餘空白
             document.body.style.minHeight = `${targetHeight * scale + 150}px`;
         }
 
-        // 圖片下載功能 (使用 html2canvas 匯出 100% 原始尺寸)
         async function downloadPoster() {
             const btn = document.getElementById('downloadBtn');
             const originalContent = btn.innerHTML;
@@ -313,47 +318,54 @@
             // 狀態變更：處理中
             btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>處理中，請稍候...</span>';
             btn.disabled = true;
-            lucide.createIcons(); // 讓載入的 icon 旋轉
+            lucide.createIcons(); 
 
             try {
-                // 1. 暫時移除 CSS 縮放，確保 html2canvas 抓取到 2245x3179 真實尺寸
+                // 1. 移除 CSS 縮放與添加匯出專用 CSS Class
                 const currentTransform = poster.style.transform;
                 poster.style.transform = 'none';
+                poster.classList.add('export-mode'); 
                 
-                // 等待一下讓瀏覽器重新計算排版
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // 2. 等待字體載入與瀏覽器重繪
+                await document.fonts.ready;
+                await new Promise(resolve => setTimeout(resolve, 800));
 
-                // 2. 轉換為 Canvas
+                // 3. 轉換為 Canvas
                 const canvas = await html2canvas(poster, {
-                    scale: 1, // 維持 1 倍，因為海報本身已經是 A1 像素尺寸
+                    scale: 1, 
                     useCORS: true,
+                    allowTaint: true,
                     backgroundColor: '#0f172a',
-                    logging: false
+                    logging: false,
+                    // 關閉外來影像平滑以防止模糊
+                    imageTimeout: 0,
                 });
 
-                // 3. 恢復縮放
+                // 4. 恢復原狀
                 poster.style.transform = currentTransform;
+                poster.classList.remove('export-mode');
 
-                // 4. 下載為 PNG
+                // 5. 下載為 PNG
                 const link = document.createElement('a');
                 link.download = '碳吉_TanJi_決策平台海報_A1.png';
-                link.href = canvas.toDataURL('image/png');
+                link.href = canvas.toDataURL('image/png', 1.0);
                 link.click();
                 
             } catch (error) {
                 console.error("輸出圖片失敗:", error);
                 alert("輸出圖片時發生錯誤，請確認是否有跨域資源 (CORS) 擋住。");
+                
+                // 例外狀況時也要恢復原狀
+                poster.style.transform = `scale(${Math.min(window.innerWidth/2245, (window.innerHeight-150)/3179) * 0.95})`;
+                poster.classList.remove('export-mode');
             } finally {
-                // 恢復按鈕狀態
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
                 lucide.createIcons();
             }
         }
 
-        // 監聽視窗大小改變
         window.addEventListener('resize', scalePoster);
-        // 初始化縮放
         scalePoster();
     </script>
 </body>
