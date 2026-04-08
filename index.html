@@ -401,12 +401,21 @@
                                 </div>
                             </div>
 
-                            <div class="bg-red-500/20 border border-red-500/50 p-4 rounded-xl flex items-start gap-4">
+                            <div class="bg-red-500/20 border border-red-500/50 p-4 rounded-xl flex items-start gap-4 transition-all duration-300">
                                 <div class="bg-red-500 p-2 rounded-lg text-white"><i class="fa-solid fa-temperature-full"></i></div>
                                 <div>
                                     <h4 class="font-bold text-red-200" id="result-temp-title">即時高溫觀測</h4>
                                     <p class="text-sm text-slate-300 mt-1" id="result-temp-desc">讀取中...</p>
                                     <p class="text-xs text-slate-400 mt-1" id="api-debug-info"></p>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-500/20 border border-blue-500/50 p-4 rounded-xl flex items-start gap-4 transition-all duration-300" id="rain-card">
+                                <div class="bg-blue-500 p-2 rounded-lg text-white" id="rain-icon-bg"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-blue-200" id="result-rain-title">即時雨量與積水警戒</h4>
+                                    <p class="text-sm text-slate-300 mt-1" id="result-rain-desc">讀取中...</p>
+                                    <p class="text-xs text-slate-400 mt-1" id="api-debug-rain-info"></p>
                                 </div>
                             </div>
                         </div>
@@ -652,10 +661,8 @@
                 <p class="mt-4 text-slate-500 max-w-2xl mx-auto text-lg">探索已導入碳吉系統的示範社區，見證平台如何從宏觀選址走向微觀的綠色改造落地實績。</p>
             </div>
 
-            <!-- 修改為支援並排顯示的容器 -->
             <div class="flex flex-col md:flex-row justify-center items-stretch gap-8">
                 
-                <!-- 第一個卡片：麗寶萊茵 -->
                 <a href="https://tanji2026.github.io/wonderfulplace" target="_blank" class="w-full max-w-md group flex flex-col bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
                     <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden shrink-0">
                         <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
@@ -678,7 +685,6 @@
                     </div>
                 </a>
 
-                <!-- 第二個卡片：低碳社區標章認證平台 -->
                 <a href="https://tanji2026.github.io/livinglab/" target="_blank" class="w-full max-w-md group flex flex-col bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:border-brand-green transition-all duration-300 transform hover:-translate-y-1">
                     <div class="h-64 bg-white flex items-center justify-center p-4 relative overflow-hidden shrink-0">
                         <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50"></div>
@@ -871,8 +877,8 @@
                         <rect width="800" height="600" fill="#cbd5e1" />
                         <rect x="0" y="300" width="800" height="300" fill="#64748b" />
                         <ellipse cx="400" cy="500" rx="180" ry="60" fill="#475569" opacity="0.8"/>
-                        <line x1="200" y="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
-                        <line x1="600" y="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="200" y1="100" x2="180" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                        <line x1="600" y1="50" x2="580" y2="150" stroke="#94a3b8" stroke-width="2"/>
                         <text x="400" y="550" font-family="sans-serif" font-size="24" fill="#e2e8f0" text-anchor="middle" font-weight="bold">不透水鋪面 (易積水)</text>
                     </svg>`,
                 nbs: `
@@ -1172,6 +1178,19 @@
             return { temp, risk, color };
         }
 
+        function getMockRain() {
+            const rain = Math.floor(Math.random() * 50); 
+            let risk = "";
+            if (rain >= 40) {
+                risk = "⚠️ <span class='text-red-400 font-bold'>時雨量達大雨標準，該區域易積淹水。請注意防範。</span>";
+            } else if (rain >= 10) {
+                risk = "目前有明顯陣雨，排水系統可能負載增加。";
+            } else {
+                risk = "目前無明顯降雨，適合進行環境巡檢或綠化維護。";
+            }
+            return { rain, risk };
+        }
+
         async function fetchOSM(query) {
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
@@ -1234,7 +1253,6 @@
                     }
                 } catch (backendErr) {
                     let osmRaw = await fetchOSM("台灣 " + userInput);
-                    
                     if(!osmRaw && userInput.includes("號")) {
                         const broaderSearch = userInput.replace(/(\d+號).*/, '').replace(/(\d+樓).*/, '');
                         if(broaderSearch !== userInput) {
@@ -1242,7 +1260,6 @@
                             if(osmRaw) statusMsg.innerText = "已定位到附近路段 (門牌模糊搜尋)";
                         }
                     }
-
                     if (osmRaw) {
                         geoData = { lat: parseFloat(osmRaw.lat), lng: parseFloat(osmRaw.lon), name: osmRaw.display_name };
                         locationName = geoData.name;
@@ -1257,7 +1274,7 @@
                 const locationData = { lat: geoData.lat, lng: geoData.lng, name: locationName };
                 ntpcDot.classList.remove('animate-ping'); 
                 
-                statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象中...`;
+                statusMsg.innerText = `已定位：${locationData.name.substring(0, 15)}... 讀取氣象與雨量中...`;
                 cwaDot.classList.replace('bg-slate-500', 'bg-brand-green');
                 cwaDot.classList.add('animate-ping');
 
@@ -1274,15 +1291,52 @@
                     let minDist = Infinity;
                     let nearestStation = weatherRaw.records.Station[0];
                     weatherRaw.records.Station.forEach(s => {
-                        const dist = Math.sqrt(Math.pow(s.GeoInfo.Coordinates[1].StationLatitude - locationData.lat, 2) + Math.pow(s.GeoInfo.Coordinates[1].StationLongitude - locationData.lng, 2));
+                        const lat = s.GeoInfo.Coordinates.find(c => c.StationLatitude) ? s.GeoInfo.Coordinates.find(c => c.StationLatitude).StationLatitude : s.GeoInfo.Coordinates[1].StationLatitude;
+                        const lon = s.GeoInfo.Coordinates.find(c => c.StationLongitude) ? s.GeoInfo.Coordinates.find(c => c.StationLongitude).StationLongitude : s.GeoInfo.Coordinates[1].StationLongitude;
+                        const dist = Math.sqrt(Math.pow(lat - locationData.lat, 2) + Math.pow(lon - locationData.lng, 2));
                         if (dist < minDist) { minDist = dist; nearestStation = s; }
                     });
                     weatherData = {
                         temp: nearestStation.WeatherElement.AirTemperature,
                         risk: `觀測站：${nearestStation.StationName} (距離 ${(minDist*111).toFixed(1)}km)`,
-                        color: nearestStation.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e",
-                        source: "Real API"
+                        color: nearestStation.WeatherElement.AirTemperature > 30 ? "#ef4444" : "#22c55e"
                     };
+                }
+
+                let rainData = null;
+                try {
+                    const rainRes = await fetch(`${backendUrl}/api/rain`);
+                    if (!rainRes.ok) throw new Error();
+                    const rainRaw = await rainRes.json();
+                    
+                    if (rainRaw.records && rainRaw.records.Station && rainRaw.records.Station.length > 0) {
+                        let minDistRain = Infinity;
+                        let nearestRainStation = rainRaw.records.Station[0];
+
+                        rainRaw.records.Station.forEach(s => {
+                            if(s.GeoInfo && s.GeoInfo.Coordinates) {
+                                const lat = s.GeoInfo.Coordinates[0].StationLatitude;
+                                const lon = s.GeoInfo.Coordinates[0].StationLongitude;
+                                const dist = Math.sqrt(Math.pow(lat - locationData.lat, 2) + Math.pow(lon - locationData.lng, 2));
+                                if (dist < minDistRain) { minDistRain = dist; nearestRainStation = s; }
+                            }
+                        });
+
+                        let hourlyRain = 0;
+                        const rfElement = nearestRainStation.RainfallElement;
+                        if(rfElement && rfElement.Past1hr && rfElement.Past1hr.Precipitation >= 0) {
+                            hourlyRain = rfElement.Past1hr.Precipitation;
+                        }
+
+                        let riskStr = `雨量站：${nearestRainStation.StationName} (距離 ${(minDistRain*111).toFixed(1)}km)<br>`;
+                        if(hourlyRain >= 40) riskStr += "⚠️ <span class='text-red-400 font-bold'>時雨量達大雨標準，請注意防範。</span>";
+                        else if(hourlyRain >= 10) riskStr += "目前有明顯陣雨，排水系統負載增加。";
+                        else riskStr += "目前無明顯降雨。";
+
+                        rainData = { rain: hourlyRain, risk: riskStr };
+                    }
+                } catch (e) {
+                    rainData = getMockRain();
                 }
 
                 cwaDot.classList.remove('animate-ping');
@@ -1324,15 +1378,24 @@
 
                 statusMsg.innerText = "分析完成！圖資已載入";
                 document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${weatherData.temp}°C</span><br>${weatherData.risk}`;
+                
+                document.getElementById('result-rain-desc').innerHTML = `近一小時雨量 <span class="text-2xl font-bold text-white">${rainData.rain} mm</span><br>${rainData.risk}`;
+                document.getElementById('api-debug-rain-info').innerText = (rainData.rain !== undefined && rainData.risk.includes("雨量站")) ? "Source: Real API (CWA O-A0002-001)" : "Source: Mock Data (Fallback)";
+                
                 document.getElementById('api-debug-info').innerText = `Source: Real APIs (OSM + CWA) + Report Images`;
                 
                 if(userInput) { document.getElementById('sim-address').value = userInput; }
 
             } catch (e) {
-                const mock = getMockTemp();
-                statusMsg.innerText = "連線異常，切換至模擬模式";
-                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mock.temp}°C</span> (模擬)<br>${mock.risk}`;
+                const mockTemp = getMockTemp();
+                const mockRain = getMockRain();
+                
+                statusMsg.innerText = "連線異常，切換至展示模式";
+                document.getElementById('result-temp-desc').innerHTML = `目前氣溫 <span class="text-2xl font-bold text-white">${mockTemp.temp}°C</span> (展示)<br>${mockTemp.risk}`;
                 document.getElementById('api-debug-info').innerText = `Source: Mock Data (Fallback)`;
+                
+                document.getElementById('result-rain-desc').innerHTML = `近一小時雨量 <span class="text-2xl font-bold text-white">${mockRain.rain} mm</span> (展示)<br>${mockRain.risk}`;
+                document.getElementById('api-debug-rain-info').innerText = `Source: Mock Data (Fallback)`;
                 
                 resultDiv.classList.remove('hidden');
                 void resultDiv.offsetWidth; 
