@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>碳吉 TanJi - 影片縮圖設計</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 加入 html2canvas 套件以支援畫面截圖下載 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
@@ -43,6 +42,7 @@
         .perspective-wrapper {
             perspective: 2000px;
         }
+        
         .isometric-ui {
             transform: rotateY(-15deg) rotateX(10deg) rotateZ(2deg);
             transform-style: preserve-3d;
@@ -58,6 +58,7 @@
             border-radius: 50%;
             z-index: 0;
         }
+        
         .glow-blob-2 {
             position: absolute;
             bottom: -200px;
@@ -79,11 +80,31 @@
             z-index: 0;
             opacity: 0.5;
         }
+
+        @keyframes scan {
+            0% { left: -10%; }
+            100% { left: 110%; }
+        }
+        
+        @media (max-width: 1350px) {
+            .thumbnail-container {
+                transform: scale(0.8);
+            }
+        }
+        @media (max-width: 1100px) {
+            .thumbnail-container {
+                transform: scale(0.6);
+            }
+        }
+        @media (max-width: 800px) {
+            .thumbnail-container {
+                transform: scale(0.4);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-800 min-h-screen flex items-center justify-center p-4">
 
-    <!-- 下載按鈕 (固定於左上角，不會被截圖擷取到) -->
     <button id="download-btn" class="fixed top-4 left-4 bg-brand-green hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg z-50 flex items-center gap-3 transition-all duration-300 transform hover:-translate-y-1">
         <i class="fa-solid fa-download text-xl"></i>
         <span>下載高品質縮圖 (PNG)</span>
@@ -107,9 +128,9 @@
                 <i class="fa-solid fa-satellite-dish mr-2"></i>資料串接 CWA 中央氣象署
             </div>
 
-            <h1 class="text-7xl font-black text-white leading-[1.15] mb-6 tracking-wide drop-shadow-lg">
+            <h1 class="text-7xl font-black text-white leading-[1.15] mb-6 tracking-wide" style="text-shadow: 0 10px 20px rgba(0,0,0,0.5);">
                 一鍵診斷<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-brand-blue drop-shadow-none">社區氣候風險</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-brand-blue" style="text-shadow: none;">社區氣候風險</span>
             </h1>
 
             <p class="text-3xl text-slate-300 font-bold border-l-4 border-brand-green pl-6 mt-4">
@@ -202,65 +223,38 @@
         </div>
     </div>
 
-    <style>
-        @keyframes scan {
-            0% { left: -10%; }
-            100% { left: 110%; }
-        }
-        @media (max-width: 1350px) {
-            .thumbnail-container {
-                transform: scale(0.8);
-            }
-        }
-        @media (max-width: 1100px) {
-            .thumbnail-container {
-                transform: scale(0.6);
-            }
-        }
-        @media (max-width: 800px) {
-            .thumbnail-container {
-                transform: scale(0.4);
-            }
-        }
-    </style>
-
-    <!-- 下載功能腳本 -->
     <script>
         document.getElementById('download-btn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             const target = document.getElementById('thumbnail-canvas');
             
-            // 變更按鈕狀態
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xl"></i><span>處理中...</span>';
             btn.style.pointerEvents = 'none';
             btn.style.opacity = '0.8';
 
-            // 暫時移除 CSS 的縮放，確保輸出為精準的 1280x720
             const originalTransform = target.style.transform;
             target.style.transform = 'scale(1)';
 
-            // 執行畫面截取
             html2canvas(target, {
                 width: 1280,
                 height: 720,
-                scale: 2, // 2倍解析度輸出，確保畫質清晰 (2560x1440)
+                scale: 2,
                 backgroundColor: '#0f172a',
-                useCORS: true
+                useCORS: true,
+                logging: false
             }).then(canvas => {
-                // 建立下載連結
                 const link = document.createElement('a');
                 link.download = 'TanJi_Thumbnail_UI.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 
-                // 恢復原始狀態
                 target.style.transform = originalTransform;
                 btn.innerHTML = originalText;
                 btn.style.pointerEvents = 'auto';
                 btn.style.opacity = '1';
             }).catch(err => {
-                console.error('截圖失敗:', err);
+                console.error(err);
                 alert('抱歉，截圖處理發生錯誤。');
                 btn.innerHTML = originalText;
                 btn.style.pointerEvents = 'auto';
