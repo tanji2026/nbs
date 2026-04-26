@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳吉 TanJi - 影片縮圖設計</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { green: '#059669', blue: '#0ea5e9' }
+                    },
+                    fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 確保縮圖保持 16:9 比例 (1280x720) */
+        .thumbnail-container {
+            width: 1280px;
+            height: 720px;
+            background-color: #0f172a; /* slate-900 */
+            position: relative;
+            overflow: hidden;
+            font-family: 'Noto Sans TC', sans-serif;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            /* 若螢幕不夠大，自動縮放顯示 */
+            transform-origin: top left;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3D 浮動視角特效 */
+        .perspective-wrapper {
+            perspective: 2000px;
+        }
+        .isometric-ui {
+            transform: rotateY(-15deg) rotateX(10deg) rotateZ(2deg);
+            transform-style: preserve-3d;
+        }
+        
+        /* 光暈背景 */
+        .glow-blob-1 {
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(5,150,105,0.4) 0%, rgba(15,23,42,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .glow-blob-2 {
+            position: absolute;
+            bottom: -200px;
+            right: -100px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(14,165,233,0.3) 0%, rgba(15,23,42,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        /* 地圖網格背景假象 */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 min-h-screen flex items-center justify-center p-4">
+
+    <!-- 提示區（不包含在縮圖內） -->
+    <div class="fixed top-4 left-4 bg-white/90 p-4 rounded-lg shadow-lg z-50 max-w-sm">
+        <h3 class="font-bold text-slate-800 mb-2"><i class="fa-solid fa-camera mr-2 text-brand-green"></i>縮圖截取教學</h3>
+        <p class="text-sm text-slate-600 mb-2">這是一個完美 1280x720 比例的網頁元件。請將瀏覽器視窗放到最大，使用截圖工具（如 Snipping Tool 或 Cmd+Shift+4）將畫面中央的深色區塊截圖下來，即可作為高畫質 YouTube 縮圖！</p>
+    </div>
+
+    <!-- 縮圖主體 1280x720 -->
+    <div class="thumbnail-container flex items-center">
+        <!-- 背景特效 -->
+        <div class="glow-blob-1"></div>
+        <div class="glow-blob-2"></div>
+        <div class="grid-bg"></div>
+
+        <!-- 左側：標題與 Logo 區塊 -->
+        <div class="w-5/12 pl-20 relative z-20 flex flex-col justify-center h-full">
+            
+            <!-- Logo -->
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-brand-green to-brand-blue rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-brand-green/30">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <span class="font-bold text-5xl tracking-tight text-white">碳吉 <span class="text-brand-green font-light">TanJi</span></span>
+            </div>
+
+            <!-- 標籤 -->
+            <div class="inline-block bg-brand-green/20 border border-brand-green text-brand-green font-bold px-4 py-2 rounded-full text-xl mb-6 w-max backdrop-blur-sm">
+                <i class="fa-solid fa-satellite-dish mr-2"></i>資料串接 CWA 中央氣象署
+            </div>
+
+            <!-- 大標題 -->
+            <h1 class="text-7xl font-black text-white leading-[1.15] mb-6 tracking-wide drop-shadow-lg">
+                一鍵診斷<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-brand-blue drop-shadow-none">社區氣候風險</span>
+            </h1>
+
+            <!-- 副標題 -->
+            <p class="text-3xl text-slate-300 font-bold border-l-4 border-brand-green pl-6 mt-4">
+                圖資疊圖 ✕ 改造補助試算
+            </p>
+        </div>
+
+        <!-- 右側：3D UI 展示區塊 -->
+        <div class="w-7/12 relative z-10 perspective-wrapper pr-12">
+            <div class="isometric-ui w-full relative">
+                
+                <!-- 主視窗背景卡片 -->
+                <div class="glass-panel rounded-3xl p-8 w-full max-w-[800px] ml-auto relative">
+                    
+                    <!-- 裝飾用視窗按鈕 -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="w-4 h-4 rounded-full bg-red-500"></div>
+                        <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
+                        <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                    </div>
+
+                    <!-- 搜尋列 UI -->
+                    <div class="flex gap-4 mb-8">
+                        <div class="flex-grow relative">
+                            <i class="fa-solid fa-location-dot absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 text-xl"></i>
+                            <div class="w-full bg-slate-800/80 border border-slate-600 rounded-xl py-5 pl-14 pr-4 text-white text-xl flex items-center">
+                                台北市大安區...
+                                <div class="ml-auto flex items-center gap-2">
+                                    <span class="w-3 h-3 bg-brand-green rounded-full animate-pulse"></span>
+                                    <span class="text-sm text-brand-green font-mono">定位成功</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-r from-brand-green to-emerald-500 text-white font-bold py-5 px-10 rounded-xl shadow-lg shadow-brand-green/40 text-xl flex items-center cursor-default">
+                            分析中 <i class="fa-solid fa-spinner fa-spin ml-3"></i>
+                        </div>
+                    </div>
+
+                    <!-- 數據卡片區 -->
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        
+                        <!-- 氣溫警告卡 -->
+                        <div class="bg-red-500/20 border-2 border-red-500/50 p-6 rounded-2xl flex items-start gap-5 transform translate-z-10 shadow-2xl shadow-red-900/20">
+                            <div class="bg-red-500 p-4 rounded-xl text-white text-3xl"><i class="fa-solid fa-temperature-full"></i></div>
+                            <div>
+                                <h4 class="font-bold text-red-300 text-lg">即時高溫觀測</h4>
+                                <p class="text-4xl font-black text-white mt-1 mb-1">36.2°C</p>
+                                <span class="bg-red-500/30 text-red-200 text-xs px-2 py-1 rounded">熱島效應高風險區</span>
+                            </div>
+                        </div>
+
+                        <!-- 雨量警告卡 -->
+                        <div class="bg-blue-500/20 border-2 border-blue-500/50 p-6 rounded-2xl flex items-start gap-5 transform translate-z-10 shadow-2xl shadow-blue-900/20">
+                            <div class="bg-blue-500 p-4 rounded-xl text-white text-3xl"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
+                            <div>
+                                <h4 class="font-bold text-blue-300 text-lg">即時雨量警戒</h4>
+                                <p class="text-4xl font-black text-white mt-1 mb-1">45 <span class="text-xl">mm</span></p>
+                                <span class="bg-blue-500/30 text-blue-200 text-xs px-2 py-1 rounded">達大雨標準 易積淹水</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 綜合圖資展示卡 -->
+                    <div class="bg-slate-800/80 border border-slate-600 rounded-2xl p-6 relative overflow-hidden h-[240px]">
+                        <h3 class="font-bold text-white mb-4 text-xl flex items-center relative z-10">
+                            <i class="fa-solid fa-layer-group text-blue-400 mr-3"></i>綜合適宜性評估疊圖
+                        </h3>
+                        
+                        <!-- 模擬地圖 (用CSS漸層與SVG幾何模擬) -->
+                        <div class="absolute inset-0 top-16 bg-slate-700 rounded-b-2xl overflow-hidden z-0">
+                            <!-- 地圖背景 -->
+                            <div class="absolute inset-0 bg-[#334155]"></div>
+                            <!-- 模擬熱點網格 -->
+                            <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#60a5fa 1px, transparent 1px); background-size: 20px 20px;"></div>
+                            
+                            <!-- SVG 模擬疊圖色塊 -->
+                            <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <path d="M50 150 Q200 50 350 120 T600 80 L600 200 L50 200 Z" fill="#ef4444" opacity="0.4"/>
+                                <path d="M100 200 Q250 100 400 150 T700 120 L700 200 L100 200 Z" fill="#f59e0b" opacity="0.4"/>
+                                <path d="M300 50 Q450 0 550 50 T800 20 L800 200 L300 200 Z" fill="#10b981" opacity="0.3"/>
+                            </svg>
+
+                            <!-- 雷達掃描動畫線條 -->
+                            <div class="absolute top-0 bottom-0 w-2 bg-gradient-to-r from-transparent via-brand-green to-transparent opacity-80" style="animation: scan 3s linear infinite; left: -10%;"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 浮出的裝飾小卡 (NbS 解方) -->
+                <div class="absolute -bottom-10 -left-16 bg-white rounded-2xl p-4 shadow-2xl flex items-center gap-4 transform translate-z-20 border-4 border-slate-100">
+                    <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-green text-2xl">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-bold mb-1">NbS 自然解方系統</div>
+                        <div class="text-xl font-black text-slate-800">綠化改造試算啟動</div>
+                    </div>
+                    <div class="text-brand-green text-3xl ml-4"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes scan {
+            0% { left: -10%; }
+            100% { left: 110%; }
+        }
+        /* 若螢幕寬度小於 1300px，使用 transform scale 讓使用者能看到全貌 */
+        @media (max-width: 1350px) {
+            .thumbnail-container {
+                transform: scale(0.8);
+            }
+        }
+        @media (max-width: 1100px) {
+            .thumbnail-container {
+                transform: scale(0.6);
+            }
+        }
+        @media (max-width: 800px) {
+            .thumbnail-container {
+                transform: scale(0.4);
+            }
+        }
+    </style>
+</body>
+</html>
