@@ -376,7 +376,7 @@
                         <input type="text" id="address-input" value="" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-brand-green transition text-base" placeholder="請輸入雙北社區地址...">
                     </div>
                     <button type="submit" class="bg-brand-green hover:bg-emerald-600 text-white font-bold py-4 px-8 rounded-lg transition shadow-lg flex items-center justify-center gap-2 min-w-[160px]">
-                        <span id="btn-text">開始分析</span>
+                        <span id="btn-text">開始 analysis</span>
                         <div id="btn-loader" class="loader hidden w-5 h-5 border-2 border-white border-t-transparent"></div>
                     </button>
                 </form>
@@ -774,8 +774,8 @@
                             <line x1="95" y1="60" x2="115" y2="60" stroke="#9ca3af" stroke-width="2"/>
                         </g>
 
-                        <path class="anim-heat" d="M250 480 Q270 430 250 380" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5"/>
-                        <path class="anim-heat anim-heat-delay" d="M550 520 Q580 450 540 380" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4"/>
+                        <path d="M250 480 Q270 430 250 380" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5" class="anim-heat"/>
+                        <path d="M550 520 Q580 450 540 380" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4" class="anim-heat anim-heat-delay"/>
                     </svg>`,
                 nbs: `
                     <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -821,17 +821,17 @@
                             <line x1="15" y1="130" x2="345" y2="130" stroke="#60a5fa" stroke-width="1.5" opacity="0.2"/>
                         </g>
 
-                        <g class="anim-sway" transform="translate(100, 320)" filter="url(#softShadow2)">
+                        <g transform="translate(100, 320)" filter="url(#softShadow2)" class="anim-sway">
                             <path d="M-10 20 C-40 -20, 20 -80, 50 -30 C80 -60, 120 -10, 90 40 C110 80, 40 100, 20 80 C-20 100, -50 60, -10 20 Z" fill="#52796f"/>
                             <path d="M0 30 C-20 0, 30 -40, 50 -10 C70 -30, 100 10, 80 40 C90 70, 40 80, 20 60 C-10 80, -30 50, 0 30 Z" fill="#74c69d"/>
                         </g>
 
-                        <g class="anim-sway anim-sway-fast" transform="translate(680, 380)" filter="url(#softShadow2)">
+                        <g transform="translate(680, 380)" filter="url(#softShadow2)" class="anim-sway anim-sway-fast">
                             <path d="M-20 10 C-50 -30, 10 -90, 40 -40 C70 -80, 130 -20, 100 30 C120 70, 50 100, 30 70 C-10 100, -50 50, -20 10 Z" fill="#40916c"/>
                             <path d="M-10 20 C-30 -10, 20 -50, 40 -20 C60 -50, 100 10, 80 40 C90 70, 40 80, 20 60 C-10 80, -30 50, -10 20 Z" fill="#95d5b2"/>
                         </g>
                         
-                        <g class="anim-sway" transform="translate(380, 480)" filter="url(#softShadow2)">
+                        <g transform="translate(380, 480)" filter="url(#softShadow2)" class="anim-sway">
                              <path d="M-40 0 C-60 -20, -20 -40, 0 -20 C20 -40, 60 -20, 40 0 C60 20, 20 40, 0 20 C-20 40, -60 20, -40 0 Z" fill="#52796f"/>
                              <path d="M-20 0 C-30 -10, -10 -20, 0 -10 C10 -20, 30 -10, 20 0 C30 10, 10 20, 0 10 C-10 20, -30 10, -20 0 Z" fill="#95d5b2"/>
                         </g>
@@ -863,11 +863,9 @@
                             </g>
                         </g>
 
-                        <!-- Planter box catching the drops -->
                         <g transform="translate(395, 445)" filter="url(#softShadow3)">
                             <rect x="0" y="0" width="30" height="20" fill="#a16207" rx="3"/>
                             <ellipse cx="15" cy="0" rx="15" ry="6" fill="#78350f"/>
-                            <!-- Plant leaves -->
                             <path d="M15 0 Q5 -15 10 -25 Q20 -15 15 0" fill="#4ade80"/>
                             <path d="M15 0 Q20 -10 25 -15 Q25 -5 15 0" fill="#22c55e"/>
                             <path d="M15 0 Q5 -10 5 -15 Q10 -5 15 0" fill="#22c55e"/>
@@ -893,7 +891,6 @@
                         <rect width="800" height="600" fill="url(#skySoft4)" />
                         <path d="M0 250 L800 250 L800 600 L0 600 Z" fill="url(#coolRoofPaint4)" />
                         
-                        <!-- 隔熱磚透視網格 -->
                         <g opacity="0.6">
                             <line x1="0" y1="300" x2="800" y2="300" stroke="#bae6fd" stroke-width="1"/>
                             <line x1="0" y1="350" x2="800" y2="350" stroke="#bae6fd" stroke-width="1.5"/>
@@ -927,8 +924,8 @@
                             <line x1="95" y1="60" x2="115" y2="60" stroke="#cbd5e1" stroke-width="2"/>
                         </g>
 
-                        <path class="anim-breeze" d="M150 480 Q300 440 450 480" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round" filter="url(#glowCoolG4)" opacity="0.7"/>
-                        <path class="anim-breeze" style="animation-delay: 1.5s;" d="M350 420 Q500 380 650 420" stroke="#7dd3fc" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#glowCoolG4)" opacity="0.8"/>
+                        <path d="M150 480 Q300 440 450 480" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round" filter="url(#glowCoolG4)" opacity="0.7" class="anim-breeze"/>
+                        <path style="animation-delay: 1.5s;" d="M350 420 Q500 380 650 420" stroke="#7dd3fc" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#glowCoolG4)" opacity="0.8" class="anim-breeze"/>
                     </svg>`
             },
             facade: {
@@ -955,8 +952,8 @@
                             <rect x="445" y="345" width="110" height="140" fill="#3f3f46"/>
                         </g>
 
-                        <path class="anim-heat" d="M120 350 Q140 280 120 210" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5"/>
-                        <path class="anim-heat anim-heat-delay" d="M680 450 Q660 380 680 310" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4"/>
+                        <path d="M120 350 Q140 280 120 210" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5" class="anim-heat"/>
+                        <path d="M680 450 Q660 380 680 310" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4" class="anim-heat anim-heat-delay"/>
                     </svg>`,
                 nbs: `
                     <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -982,8 +979,8 @@
                         </g>
 
                         <g filter="url(#softShadow6)">
-                            <path class="anim-sway" d="M180 50 Q220 200 190 350 C170 450 210 550 180 600" stroke="#74c69d" stroke-width="15" fill="none" stroke-linecap="round"/>
-                            <path class="anim-sway anim-sway-fast" d="M620 50 Q580 250 610 400 C630 500 590 550 620 600" stroke="#52796f" stroke-width="18" fill="none" stroke-linecap="round"/>
+                            <path d="M180 50 Q220 200 190 350 C170 450 210 550 180 600" stroke="#74c69d" stroke-width="15" fill="none" stroke-linecap="round" class="anim-sway"/>
+                            <path d="M620 50 Q580 250 610 400 C630 500 590 550 620 600" stroke="#52796f" stroke-width="18" fill="none" stroke-linecap="round" class="anim-sway anim-sway-fast"/>
                             
                             <circle cx="190" cy="150" r="35" fill="#95d5b2" class="anim-sway"/>
                             <circle cx="610" cy="200" r="45" fill="#74c69d" class="anim-sway anim-sway-fast"/>
@@ -1011,13 +1008,11 @@
                             <rect x="190" y="480" width="60" height="90" fill="#d1d5db" rx="6"/>
                             <rect x="550" y="480" width="60" height="90" fill="#d1d5db" rx="6"/>
                             
-                            <!-- Left Tap -->
                             <g transform="translate(250, 540)">
                                 <path d="M0 0 L15 0 L15 15" stroke="#9ca3af" stroke-width="5" fill="none" stroke-linejoin="round"/>
                                 <rect x="3" y="-6" width="12" height="4" fill="#ef4444" rx="2"/>
                                 <path d="M15 15 L15 35" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round" class="anim-drop" opacity="0.8"/>
                             </g>
-                            <!-- Left Planter Box -->
                             <g transform="translate(255, 575)">
                                 <rect x="0" y="0" width="20" height="15" fill="#a16207" rx="2"/>
                                 <ellipse cx="10" cy="0" rx="10" ry="4" fill="#78350f"/>
@@ -1026,13 +1021,11 @@
                                 <path d="M10 0 Q5 -5 2 -10 Q5 0 10 0" fill="#22c55e"/>
                             </g>
 
-                            <!-- Right Tap -->
                             <g transform="translate(535, 540)">
                                 <path d="M15 0 L0 0 L0 15" stroke="#9ca3af" stroke-width="5" fill="none" stroke-linejoin="round"/>
                                 <rect x="0" y="-6" width="12" height="4" fill="#ef4444" rx="2"/>
                                 <path d="M0 15 L0 35" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round" class="anim-drop" opacity="0.8"/>
                             </g>
-                            <!-- Right Planter Box -->
                             <g transform="translate(525, 575)">
                                 <rect x="0" y="0" width="20" height="15" fill="#a16207" rx="2"/>
                                 <ellipse cx="10" cy="0" rx="10" ry="4" fill="#78350f"/>
@@ -1081,7 +1074,7 @@
                             <path d="M420 440 L580 440 L570 455 L430 455 Z" fill="url(#woodLouver8)"/>
                         </g>
 
-                        <path class="anim-breeze" d="M150 280 Q400 250 650 280" stroke="#bae6fd" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6"/>
+                        <path d="M150 280 Q400 250 650 280" stroke="#bae6fd" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6" class="anim-breeze"/>
                     </svg>`
             },
             ground: {
@@ -1095,8 +1088,8 @@
                         <path d="M380 250 L320 650" stroke="#fcd34d" stroke-width="8" opacity="0.6"/>
                         <path d="M420 250 L480 650" stroke="#fcd34d" stroke-width="8" opacity="0.6"/>
                         
-                        <path class="anim-heat" d="M200 480 Q220 420 200 360" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5"/>
-                        <path class="anim-heat anim-heat-delay" d="M600 520 Q580 450 600 380" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4"/>
+                        <path d="M200 480 Q220 420 200 360" stroke="#fca5a5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5" class="anim-heat"/>
+                        <path d="M600 520 Q580 450 600 380" stroke="#fca5a5" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.4" class="anim-heat anim-heat-delay"/>
                     </svg>`,
                 nbs: `
                     <svg class="w-full h-full object-cover" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -1109,14 +1102,14 @@
                         <path d="M0 380 Q200 350 400 450 T800 400 L800 650 L0 650 Z" fill="#95d5b2" />
                         <path d="M-50 480 Q300 420 850 550 L850 650 L-50 650 Z" fill="#74c69d" />
                         
-                        <g class="anim-sway" transform="translate(250, 320)" filter="url(#softShadow10)">
+                        <g transform="translate(250, 320)" filter="url(#softShadow10)" class="anim-sway">
                             <path d="M-8 0 C-12 -40, 4 -80, 0 -120 C4 -80, 12 -40, 8 0 Z" fill="#a67c52"/>
                             <circle cx="0" cy="-140" r="80" fill="#52796f"/>
                             <circle cx="-30" cy="-170" r="60" fill="#74c69d"/>
                             <circle cx="40" cy="-120" r="50" fill="#40916c"/>
                         </g>
 
-                        <g class="anim-sway anim-sway-fast" transform="translate(580, 400)" filter="url(#softShadow10)">
+                        <g transform="translate(580, 400)" filter="url(#softShadow10)" class="anim-sway anim-sway-fast">
                             <path d="M-10 0 C-15 -60, 5 -100, 0 -150 C5 -100, 15 -60, 10 0 Z" fill="#a67c52"/>
                             <circle cx="0" cy="-180" r="100" fill="#40916c"/>
                             <circle cx="-40" cy="-210" r="70" fill="#95d5b2"/>
@@ -1147,12 +1140,12 @@
                         <circle cx="450" cy="520" r="15" stroke="#e0f2fe" stroke-width="2" fill="none" class="anim-ripple"/>
                         <circle cx="350" cy="540" r="10" stroke="#e0f2fe" stroke-width="1.5" fill="none" class="anim-ripple anim-ripple-delay"/>
 
-                        <g class="anim-sway" transform="translate(180, 460)">
+                        <g transform="translate(180, 460)" class="anim-sway">
                             <path d="M0 0 Q-10 -30 -5 -60" stroke="#52796f" stroke-width="3" fill="none" stroke-linecap="round"/>
                             <path d="M0 0 Q10 -40 5 -80" stroke="#74c69d" stroke-width="2" fill="none" stroke-linecap="round"/>
                         </g>
                         
-                        <g class="anim-sway anim-sway-fast" transform="translate(680, 480)">
+                        <g transform="translate(680, 480)" class="anim-sway anim-sway-fast">
                             <path d="M0 0 Q-15 -40 -10 -80" stroke="#40916c" stroke-width="4" fill="none" stroke-linecap="round"/>
                             <path d="M0 0 Q15 -50 10 -90" stroke="#52796f" stroke-width="3" fill="none" stroke-linecap="round"/>
                         </g>
@@ -1179,8 +1172,8 @@
                             <path d="M680 200 L700 650" stroke="#94a3b8" stroke-width="6" fill="none"/>
                         </g>
                         
-                        <path class="anim-breeze" d="M200 480 Q450 420 700 480" stroke="#7dd3fc" stroke-width="8" fill="none" stroke-linecap="round" filter="url(#glowCoolG12)" opacity="0.7"/>
-                        <path class="anim-breeze" style="animation-delay: 1.5s;" d="M300 400 Q450 450 600 400" stroke="#bae6fd" stroke-width="6" fill="none" stroke-linecap="round" filter="url(#glowCoolG12)" opacity="0.8"/>
+                        <path d="M200 480 Q450 420 700 480" stroke="#7dd3fc" stroke-width="8" fill="none" stroke-linecap="round" filter="url(#glowCoolG12)" opacity="0.7" class="anim-breeze"/>
+                        <path style="animation-delay: 1.5s;" d="M300 400 Q450 450 600 400" stroke="#bae6fd" stroke-width="6" fill="none" stroke-linecap="round" filter="url(#glowCoolG12)" opacity="0.8" class="anim-breeze"/>
                         
                         <circle cx="450" cy="450" r="130" fill="#38bdf8" opacity="0.12" filter="url(#glowCoolG12)" class="anim-glow"/>
                     </svg>`
@@ -1507,7 +1500,7 @@
             ntpcDot.classList.add('animate-ping');
 
             try {
-                const backendUrl = 'https://tanji-backend-d66y.vercel.app'; 
+                const backendUrl = ''; 
                 let geoData = null;
                 let locationName = userInput;
 
@@ -1515,9 +1508,8 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 3000); 
                     const geoRes = await fetch(`${backendUrl}/api/geocode?address=${encodeURIComponent("台灣 " + userInput)}`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    
                     if (geoRes.ok) {
+                        clearTimeout(timeoutId);
                         geoData = await geoRes.json();
                         locationName = geoData.name;
                     } else {
