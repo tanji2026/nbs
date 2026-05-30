@@ -137,7 +137,7 @@
                         <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/60 shadow-sm flex flex-col items-center text-center relative overflow-hidden justify-center min-h-[300px]" id="interaction-zone">
                             <div id="baby-glow" class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-500/5 via-white to-transparent opacity-50 transition-opacity duration-300"></div>
                             <div id="baby-wrapper" class="relative w-36 h-36 flex items-center justify-center bg-gradient-to-tr from-brand-50 to-white rounded-full shadow-sm mb-5 border border-slate-100 z-10 transition-transform duration-300 shrink-0">
-                                <img id="baby-img" src="assets/tanjibaby/tanjibaby9.png" alt="碳吉寶寶" class="w-[80%] h-[80%] object-cover rounded-full z-10 select-none anim-float" draggable="false" onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzAwN2Q4YSIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9udC1zaXplPSI0MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+56KzPC90ZXh0Pjwvc3ZnPg=='">
+                                <img id="baby-img" src="assets/tanjibaby/tanjibaby.png" alt="碳吉寶寶" class="w-[80%] h-[80%] object-cover rounded-full z-10 select-none anim-float" draggable="false" onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzAwN2Q4YSIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9ud-vzaXplPSI0MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+56KzPC90ZXh0Pjwvc3ZnPg=='">
                                 <video id="baby-vid" src="assets/tanjibaby/tanjibaby_hi.mp4" preload="none" class="absolute inset-0 w-full h-full object-cover rounded-full z-20 hidden pointer-events-none" muted playsinline></video>
                             </div>
                             <button id="dailyCheckInBtn" class="mb-3 bg-brand-500 text-white hover:bg-brand-600 px-5 py-2.5 rounded-full font-bold text-xs transition-colors shadow-sm flex items-center gap-2 group relative z-30 border border-brand-600">
@@ -331,7 +331,7 @@
                     </div>
                 </div>
 
-                <div id="sustainability-cta-card" class="bg-slate-50 p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center cursor-pointer hover:border-brand-500 hover:scale-[1.02] transition-all duration-300 group">
+                <div id="sustainability-cta-card" class="bg-slate-50 p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center cursor-pointer hover:border-brand-500 hover:scale-[1.02] transition-all duration-300 group w-full">
                     <div class="flex flex-col items-center">
                         <span id="cta-baby-emoji" class="text-4xl mb-3 group-hover:animate-bounce">🌱</span>
                         <h4 id="cta-baby-title" class="font-bold text-slate-800 mb-1">碳吉寶寶 成長監控</h4>
@@ -1031,9 +1031,9 @@
         ];
 
         const rewardItemsData = {
-            1: { title: "專屬永續數位徽章", icon: "🏅", code: "TJ-BADGE-ACQUIRED", desc: "此徽章已綁定您的電子憑證編號，可永久於個人憑證展示區作為永續勳章展示。" },
-            2: { title: "低碳咖啡免費兌換券", icon: "☕", code: "TJ-COFFEE-FREE88", desc: "感謝支持綠色創生！出示此條碼可於合作減碳咖啡店家免費兌換環保美式咖啡乙杯。" },
-            3: { title: "碳吉寶寶實體環保杯", icon: "🌱", code: "TJ-CUP-GO-GREEN99", desc: "限量再生材質環保杯！我們已登記您的兌換資格，後續將以 Email 寄送表單收集收件資訊。" }
+            1: { title: "專屬永續數位徽章", icon: "🏅", code: "TJ-BADGE-ACQUIRED", desc: "此徽章已自動防偽綁定您的電子憑證編號，可永久於個人憑證展示區作為綠色貢獻勳章展示。" },
+            2: { title: "低碳咖啡免費兌換券", icon: "☕", code: "TJ-COFFEE-FREE88", desc: "本券遵循經濟部能源署電力排碳係數方法學發放。出示此條碼可於全台合作減碳綠色咖啡店家免費兌換環保熱美式咖啡乙杯。" },
+            3: { title: "碳吉寶寶實體環保杯", icon: "🌱", code: "TJ-CUP-GO-GREEN99", desc: "限量再生材質環保杯！我們已將您的兌換編號寫入去中心化存根，後續將以 Email 寄送表單收集物流收件資訊。" }
         };
 
         const levelDefinition = [
