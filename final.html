@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>碳吉 TanJi 成果簡報</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #e2e8f0; }
+        .slide { 
+            width: 960px; 
+            height: 540px; /* 16:9 比例 */
+            margin: 20px auto; 
+            background: white; 
+            padding: 50px 80px; 
+            box-sizing: border-box; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+            page-break-after: always; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+        }
+        .center-slide { justify-content: center; align-items: center; text-align: center; }
+        h1 { color: #059669; font-size: 2.8em; margin-bottom: 0.2em; }
+        .subtitle { font-size: 1.4em; color: #475569; margin-bottom: 1.5em; }
+        .award { background-color: #d1fae5; color: #065f46; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 1.1em; }
+        h2 { color: #0f172a; border-bottom: 3px solid #10b981; padding-bottom: 15px; font-size: 2em; margin-top: 0; }
+        ul { font-size: 1.35em; line-height: 1.8; color: #334155; margin-top: 20px; padding-left: 30px; }
+        li { margin-bottom: 15px; }
+        li strong { color: #059669; }
+        .footer-text { position: absolute; bottom: 30px; right: 50px; font-size: 0.85em; color: #94a3b8; }
+        
+        /* 列印為 PDF 時的設定 */
+        @media print {
+            @page { size: 16in 9in; margin: 0; }
+            body { background: white; -webkit-print-color-adjust: exact; }
+            .slide { margin: 0; box-shadow: none; width: 100vw; height: 100vh; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 投影片 1：封面 -->
+    <div class="slide center-slide">
+        <h1>碳吉 TanJi</h1>
+        <div class="subtitle">社區微氣候韌性與 NbS 決策平台<br><span style="font-size: 0.8em; color: #64748b;">從數據賦能到永續落地，為既有社區穿上綠色氣候防護衣</span></div>
+        <div class="award">🏆 2026 氣候變遷創意實作競賽 - 交通部中央氣象署「氣候應用特別獎」</div>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 2 -->
+    <div class="slide">
+        <h2>核心痛點與破局之道</h2>
+        <ul>
+            <li><strong>痛點挑戰：</strong>氣候變遷威脅都市居住安全，但高昂的專業顧問費用與缺乏科學評估工具，使得基層管委會難以推動具體的氣候調適行動。</li>
+            <li><strong>破局之道：</strong>碳吉 TanJi 透過數位平台，將「看不見的氣候危機」轉化為「看得見的科學數據」。</li>
+            <li><strong>落地核心價值：</strong>透過系統化的效益模擬，讓自然解方 (NbS) 不再只是環保口號，而是能為社區創造實質資產增值與節能省費的解決方案。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 3 -->
+    <div class="slide">
+        <h2>系統現狀與實證成果</h2>
+        <ul>
+            <li><strong>無伺服器與資料驅動架構：</strong>穩健整合 CWA 中央氣象署、OpenStreetMap 與 NCDR 靜態圖資庫。</li>
+            <li><strong>模組化決策雙引擎：</strong>具備宏觀風險快篩（熱島與淹水觀測）與微觀動態效益模擬（自動換算降溫與水電節省）。</li>
+            <li><strong>成功實證落地：</strong>導入「麗寶萊茵社區」進行微觀改造示範，以透明財務試算成功協助管委會消弭決策阻力。</li>
+            <li><strong>指標性進展：</strong>該社區已運用平台產出之數據報表，正式遞交 115 年度低碳社區改造補助計畫書。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 4 -->
+    <div class="slide">
+        <h2>未來落地藍圖 (一)：精煉數據與優化預測</h2>
+        <ul>
+            <li><strong>建構區域氣候資料庫：</strong>逐步匯集與儲存合作社區的微氣候觀測資料、建築耗能特徵與自然解方實作後的成效數據。</li>
+            <li><strong>導入歷史氣象數據：</strong>運用歷史氣象資料集進行預測模型訓練。</li>
+            <li><strong>微氣候趨勢洞察：</strong>嘗試提供社區未來微氣候變化的趨勢預測，協助社區從「被動防護」逐步升級為「主動營運管理」。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 5 -->
+    <div class="slide">
+        <h2>未來落地藍圖 (二)：補助模組擴充與跨域驗證</h2>
+        <ul>
+            <li><strong>擴充補助資料庫：</strong>逐步將北部其他縣市的永續與低碳補助法規數位化，作為未來物業管理業者的評估工具。</li>
+            <li><strong>跨足產業基礎設施：</strong>系統演算法與圖資疊合技術，未來可嘗試應用於中小型園區或公共設施的氣候韌性初步評估。</li>
+            <li><strong>推廣生態與節能共生：</strong>協助更多社區與公部門將自然解方納入前期規劃，兼顧生態效益與空調節能。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 6 -->
+    <div class="slide">
+        <h2>未來落地藍圖 (三)：減碳指標標準化</h2>
+        <ul>
+            <li><strong>減碳數據標準化：</strong>研究如何將自然解方帶來的節能減碳與環境韌性效益，轉換為更易讀、更符合規範的量化指標。</li>
+            <li><strong>對接永續資源：</strong>協助完成改造的社區，以系統產出的標準化數據作為未來申請進階政府補助或相關綠色獎勵的佐證依據。</li>
+            <li><strong>建立正向循環：</strong>串聯政府政策與社區實務需求，穩健打通推廣永續基礎設施的實務閉環。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 7 -->
+    <div class="slide">
+        <h2>專案推動時程與里程碑</h2>
+        <ul>
+            <li><strong>近期目標（半年內）：</strong>優化雙北地區資料庫，增加 2 至 3 個指標性試辦社區，收集實際營運回饋並完善系統介面。</li>
+            <li><strong>中期目標（一年內）：</strong>嘗試導入基礎機器學習模型分析歷史數據，並測試將鄰近縣市的補助法規納入系統評估範圍。</li>
+            <li><strong>長期目標（一至兩年）：</strong>完善減碳指標的標準化輸出格式，並針對不同建築型態（如商辦或小型園區）進行先期評估測試。</li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+    <!-- 投影片 8 -->
+    <div class="slide center-slide">
+        <h2>堅實的跨領域團隊</h2>
+        <ul style="list-style-type: none; padding: 0; text-align: center; margin-top: 40px;">
+            <li>結合<strong>公共行政暨政策</strong>與<strong>都市計劃</strong>等跨領域專業</li>
+            <li>具備扎實的學術研究基礎</li>
+            <li>掌握專案管理、政策法規與技術整合能力</li>
+            <li style="margin-top: 30px; color: #0f172a;"><strong>確保解決方案具備極高的實務落地可行性</strong></li>
+        </ul>
+        <div class="footer-text">碳吉 TanJi 團隊</div>
+    </div>
+
+</body>
+</html>
